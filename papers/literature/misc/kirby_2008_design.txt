@@ -1,0 +1,27 @@
+SEEN (14)
+UNSEEN (13)
+
+(1)training - SEEN set (x 2)
+testing - SEEN (7) + UNSEEN set (6) = 13
+
+(2)training - SEEN set (x 2)
+testing - SEEN(7) + UNSEEN set (6) = 13
+
+(3)training - SEEN set (x 2)
+testing - SEEN(14) + UNSEEN set (13) = 26
+
+OUTPUT: final testing of the previous participant, which is re-divided into new SEEN and UNSEEN sets. 
+
+* training:  see word for 1s then word + pictures for 5s
+* testing: see picture, type word
+
+Prediction: with iterations, language becomes more systematic — in particular, have stronger complexity bias
+
+- design decisions: how much training, how to initiate?
+
+*current state of RC is that we have evidence across a bunch of languages that longs tend to map longer words to more complex references
+* And we have evidence that not only are language structured that way, but speakers tend to behave in a way that is consistent with this bias when faced with novel words 
+* and so an appealing explanation of the bias in natural language is that it’s the result of a communicative bias influencing the structure of the language over time. 
+* BUT: we really don’t have any direct evidence for this, any evidence of the diachronic process that would lead to this structure
+* SO: thinking of doing an integrated learning experiment. The idea behind iterated learning is that the learning output of one speaker, because the learning inpunt for the next speaker. And so you can see how the process of transmission might change language….
+

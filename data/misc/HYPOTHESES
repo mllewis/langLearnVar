@@ -1,0 +1,49 @@
+HYPOTHESES
+H: languages with more people have simplier morphology because of compression
+H: languages with more people have smaller complexity bias because of compression
+H: more complexity bias more UID tendency (e.g. word order)
+SO: look at relationship between complexity bias and morphology
+
+PREDICT: languages with bigger complexity bias should have more complex morphology
+H: langs with bigger complexity bias have simplier morphology?
+langs with bigger complexity bias have free-er word order
+
+** MORPHOLOGY **
+reduplication (RUBRED)
+Fusion of Selected Inflectional Formatives (BICFUS)
+
+** NOMINAL CATEGORIES **
+definitite articles (DRYDEF)
+Asymmetrical Case-Marking (IGGCMA)
+Numeral Classifiers (GILCLF)
+The Associative Plural (MORASP)
+Position of Pronominal Possessive Affixes (DRYPOS)
+Indefinite articles (DRYIND)
+
+** VERBAL CATEGORIES **
+Suppletion According to Tense and Aspect (VESTAM)
+Position of Tense-Aspect Affixes (DRYTAA)
+Overlap between Situational and Epistemic Modal Marking (AUWSEM)
+
+** SIMPLE CLAUSES ***
+expression of pronomial subject (DRYPRO)
+polar questions (DRYPOQ)
+Alignment of Verbal Person Marking (SIEALI)
+
+** WORD ORDER **
+Order of adjective and noun (DRYADJ)
+Order of Degree Word and Adjective (DRYDEG)
+Order of numeral and noun (DRYNUM)
+Order of Demonstrative and Noun (DRYDEM)
+Order of Adposition and Noun Phrase (DRYADP)
+Order of Genitive and Noun (DRYGEN)
+Order of Subject, Object and Verb (DRYSOV)
+
+** SEMANTIC LEXICON **
+hand and arm (BROHAN)
+numeral bases (COMNUM)
+
+** NOMINAL SYNTAX **
+Nominal and Verbal Conjunction (HASCON)
+Noun Phrase Conjunction (STACOO)
+ 
