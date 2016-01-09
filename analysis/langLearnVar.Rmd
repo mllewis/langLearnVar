@@ -30,12 +30,13 @@ rm(list = ls())
 library(knitr)
 library(ggplot2)
 library(langcog)
+library(plyr)
 library(dplyr)
 library(tidyr)
 library(corrplot)
 library(broom)
 
-opts_chunk$set(cache = T, warning = F, message = F)
+opts_chunk$set(cache = F, warning = F, message = F)
 
 cor.mtest <- function(mat, conf.level = 0.95) {
   mat <- as.matrix(mat)
@@ -71,7 +72,13 @@ Merge together all population learnability features:
 Read in Lupyan and Dale data
 ```{r}
 ld = read.table("../data/lupyan_2010.txt", fill = T, 
-               header = T, sep = "\t", na.strings = "*")
+               header = T, sep = "\t", na.strings = "*") %>%
+    rename(log.pop2 = logpop2, 
+           mean.temp = aveTemp,
+           n.neighbors = numNeighbors,
+           sum.precip = sumPrecip,
+           sd.temp = sdTemp,
+           sd.precip = sdPrecip)
 
 # fix language labels
 ld$ethnologue_lang_name = tolower(ld$ethnologue_lang_name)
@@ -149,6 +156,7 @@ Merge together all linguistic features:
  * dependency length (Futrell)
  * type-token ratio (Bentz)
  * uid-ness (Pelligrino)
+ * aoa (wor)
  * morphological complexity (Lupyan & Dale) -- missing
  * mean length -- missing
 
@@ -179,7 +187,7 @@ phoneme = read.csv("../data/moran_2012.csv") %>%
           rename(language = Name, log.pop.moran = logPop) %>%
           mutate(language = tolower(language))
 
-# aoa
+# aoa (wordbank)
 aoa_data = read.csv("../data/aoa_data.csv") %>%
           filter( aoa > 5 & aoa < 31) 
 
@@ -188,7 +196,7 @@ aoa_central = aoa_data %>%
   filter(measure == "understands", 
          lexical_category == "nouns") %>%
   group_by(language) %>%
-  summarise(mean_aoa = mean(aoa))
+  summarise(wb.mean.aoa = mean(aoa))
 
 # mean length - is this IPA? - fix this!
 asjp = read.csv("../data/asjp.csv") %>% 
@@ -235,7 +243,38 @@ asjp$language = ifelse(grepl("yiddish", asjp$language),
 
 asjp.d = asjp %>%
         group_by(language) %>%
-        summarize(mean.length = mean(nchar, na.rm = T)) 
+        summarize(asjp.mean.length = mean(nchar, na.rm = T)) 
+```
+
+AOA (Luniewska)
+```{r}
+aoa_lun.raw = read.csv("../data/luniewska_2015.csv", header = T, 
+                   fileEncoding = "latin1")
+  
+# aoas
+aoa_lun.aoa = aoa_lun.raw %>%
+  gather(language_aoa, aoa, grep("aoa", names(aoa_lun.raw))) %>%
+  mutate(language_aoa = tolower(unlist(lapply(strsplit(
+    as.character(language_aoa),"_"), function(x) x[1])))) %>%
+  select(-3:-27) %>%
+  rename(language = language_aoa) %>%
+  group_by(language, word_class) %>%
+  summarize(lun.mean.aoa= mean(aoa, na.rm = T)) %>%
+  spread(word_class,lun.mean.aoa) %>%
+  rename(lun.aoa.noun = noun, lun.aoa.verb = verb)
+
+# mean length (just for fun)
+trans_col_is = which(is.element(names(aoa_lun.raw),names(aoa_lun.raw)
+                                [!grepl("aoa", names(aoa_lun.raw))]))
+trans_col_is = trans_col_is[-1:-2]
+aoa_lun = aoa_lun.raw %>%
+  gather(language, translation, trans_col_is) %>%
+  mutate(language = tolower(language)) %>%
+  select(-3:-27) %>%
+  group_by(language) %>%
+  mutate(length = nchar(translation)) %>%
+  summarize(lun.mean.length = mean(length, na.rm = T)) %>%
+  left_join(aoa_lun.aoa) 
 ```
 
 Merge population with all language variables
@@ -245,7 +284,8 @@ d = full_join(demo, cb) %>%
     full_join(uid) %>%
     full_join(aoa_central) %>%
     full_join(phoneme) %>%
-    left_join(asjp.d)
+    left_join(asjp.d) %>%
+    left_join(aoa_lun)
 
 ```
 
@@ -255,9 +295,10 @@ d = full_join(demo, cb) %>%
 #for (i in 1:length(names(d))) {
 #  l = paste(l, '"', names(d)[i], '",', sep = "")
 #}
-demo_vars = c("area","perimeter","numNeighbors","aveTemp","sumPrecip","sdTemp","sdPrecip","growingSeason","logpop2","RatioL2","PercL2", "log.pop.moran")
+demo_vars = c("area","perimeter","n.neighbors","mean.temp","sum.precip","sd.temp","sd.precip","growingSeason","log.pop2","RatioL2","PercL2", "log.pop.moran")
 
-lang_vars = c("a.LDT","a.LDTinv","a.LDTscaled","H.LDT","H.LDTinv","H.LDTscaled","TTR.LDT","TTR.LDTinv","TTR.LDTscaled","complexity.bias","p.complexity.bias","mono.complexity.bias","open.complexity.bias","mean.length","m_rand","m_obs","mean_dependency_diff","fixed.random.baseline.slope","observed.slope","slope_dif","information.density","syllable.rate","information.rate","mean_aoa","pho","con","vow")
+lang_vars = c("a.LDT","a.LDTinv","a.LDTscaled","H.LDT","H.LDTinv","H.LDTscaled","TTR.LDT","TTR.LDTinv","TTR.LDTscaled","complexity.bias","p.complexity.bias","mono.complexity.bias","open.complexity.bias","mean.length","lun.mean.length","m_rand","m_obs","mean_dependency_diff","fixed.random.baseline.slope","observed.slope","slope_dif","information.density","syllable.rate","information.rate","wb.mean.aoa","pho","con","vow", "aoa_lun", "lun.mean.length.noun",
+  "lun.mean.length.verb", "lun.aoa.noun", "lun.aoa.verb")
 
 d %>%
   gather(variable, num, area:length(d))  %>%
@@ -274,23 +315,23 @@ Take the log of of the non-normal-looking variables and re-plot
 d = d %>%
     mutate(log.area = log(area),
               log.perimeter = log(perimeter),
-              log.numNeighbors = log(numNeighbors),
-              log.sumPrecip = log(sumPrecip),
-              log.sdTemp = log(sdTemp),
-              log.sdPrecip = log(sdPrecip),
+              log.n.neighbors = log(n.neighbors),
+              log.sum.precip = log(sum.precip),
+              log.sd.temp = log(sd.temp),
+              log.sd.precip = log(sd.precip),
               log.RatioL2= log(RatioL2),
               log.n.phonemes = log(pho),
               log.n.consonants = log(con),
               log.n.vow = log(vow),
-              log.mean.length = log(mean.length)) %>%
-    select(-area, -perimeter, -numNeighbors, -sdTemp,
-           -sdPrecip, -RatioL2, -sumPrecip, -pho, -con, -vow, -mean.length)
+              log.asjp.mean.length = log(asjp.mean.length))%>%
+    select(-area, -perimeter, -n.neighbors, -sd.temp,
+           -sd.precip, -RatioL2, -sum.precip, -pho, -con, -vow, -asjp.mean.length)
 
-demo_vars = c(intersect(names(d), demo_vars), "log.area", "log.perimeter", "log.numNeigbors", "log.sumPrecip", "log.sdTemp", "log.sdPrecip", "log.RatioL2")
-lang_vars = c(intersect(names(d), lang_vars), "lang_vars", "log.n.phonemes", "log.n.consonants", "log.n.vow", "log.mean.length")
+demo_vars = c(intersect(names(d), demo_vars), "log.area", "log.perimeter", "log.n.neighbors", "log.sum.precip", "log.sd.temp", "log.sd.precip", "log.RatioL2")
+lang_vars = c(intersect(names(d), lang_vars), "lang_vars", "log.n.phonemes", "log.n.consonants", "log.n.vow", "log.asjp.mean.length")
 
 d %>%
-  gather(variable, num, aveTemp:length(d))  %>%
+  gather(variable, num, mean.temp:length(d))  %>%
   mutate(var_type = ifelse(is.element(variable, demo_vars), "demo", "lang")) %>%
   arrange(var_type) %>%
   ggplot(aes(x=num, fill = var_type)) + 
@@ -325,7 +366,7 @@ corrplot(corrs)
 ```
 
 Scatter plots
-```{r, fig.width=10, fig.height = 10}
+```{r, fig.width=10, fig.height = 14}
 d.scatter = d %>% 
   select(-a.LDT, -a.LDTinv, -a.LDTscaled, -H.LDTinv,
          -H.LDTscaled, -TTR.LDT, -TTR.LDTinv, -TTR.LDTscaled,
@@ -334,7 +375,7 @@ d.scatter = d %>%
          -fixed.random.baseline.slope, -slope_dif,
          -PercL2, -information.rate, -log.pop.moran,
          -log.n.vow, -log.n.phonemes, -log.perimeter,
-         -observed.slope) %>%
+         -observed.slope, -lun.mean.length) %>%
   gather(lang_measure, lang_value, 
          which(is.element(names(.), lang_vars))) %>%
   group_by(lang_measure) %>%
@@ -347,6 +388,8 @@ text.pos = d.scatter %>%
                     min_pop = min(pop_value, na.rm = T),
                     dif_lang =  max(lang_value, na.rm = T) - min_lang,
                     dif_pop =  max(pop_value, na.rm = T) - min_pop) 
+
+is.na(d.scatter) <- sapply(d.scatter, is.infinite)
 
 # get correlations
 d.scatter.corrs = d.scatter %>%
@@ -383,22 +426,61 @@ ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
   
 ```
 
+WALS features of complexity
+```{r}
+# aggregate across countries to get quantitative measures by language
+most.frequent.level = function (x){
+    mf = names(which.max(table(x)))
+    return(mf)
+}
+
+# aggregate L&D data by language
+qual = ld %>%
+  colwise(as.factor)(.)  %>%
+  select(-1:-17, -104:-122) %>%
+  #select(-1:-3, -5:-9, -13, -15:-17, -104:-122) %>%
+  group_by(eln2) %>%
+  summarise_each(funs(most.frequent.level))
+
+qual <- colwise(as.factor)(qual)
+
+# include 
+labNames= read.csv("../data/lupyan_WALS_feature_names.csv")
+toInclude = labNames[labNames$include == 1, ]
+qualVarNames = intersect(names(qual), toInclude$Name)
+
+# Some vars are missing from L&D data set ["HASIND" "GILDIF" "AUWPRH" "DRYSBV" "DRYOBV" "DRYXOV" "DRYREL" "POLANT" "POLAPP" "SONPER" "SONNON" "NICMTP" "NICNMP" "DAHTEA"]
+
+# remap factor levels to human readable values (not all present)
+labMappings = read.csv("../data/lupyan_WALS_lab_mappings.csv")
+for (i in 1:length(qualVarNames)){
+  thisVarLabs = labMappings[labMappings$featureName == qualVarNames[i],]
+  old = thisVarLabs$oldLab
+  new = thisVarLabs$newLab
+  col_i = grep(qualVarNames[i], colnames(qual))
+  qual[,col_i] = mapvalues(qual[,col_i], 
+                           from = as.character(old),
+                           to = as.character(new))
+}
+
+featureCats = levels(droplevels(toInclude$Feature.Class))
+```
+
 ## Parallels between language ontogeny and evolution
 get measures of developmental change in vocabulary
 
 ## Learnability pressures predicts AOA across languages
 Predict AOA by social variables, by social variable
 ```{r, fig.width=10, fig.height = 10, eval = F}
-
 aoa_central = aoa_data %>% 
   mutate(language = tolower(language)) %>%
   group_by(language, measure, lexical_category) %>%
   summarise(mean_aoa = mean(aoa))
   
 d3 = inner_join(d, aoa_central, by = "language") %>%
-  select(language, log.RatioL2, logpop2,
+  select(language, log.RatioL2, log.pop2,
          log.numNeighbors, log.area, 
-         aveTemp, mean_aoa, measure, lexical_category) %>%
+         mean.temp, mean_aoa, measure, lexical_category) %>%
   mutate(language = as.factor(language)) %>%
   gather(pop_measure, pop_value, 2:6) 
 
