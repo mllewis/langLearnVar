@@ -35,6 +35,7 @@ library(dplyr)
 library(tidyr)
 library(corrplot)
 library(broom)
+library(lme4)
 
 opts_chunk$set(cache = F, warning = F, message = F)
 
@@ -156,9 +157,9 @@ Merge together all linguistic features:
  * dependency length (Futrell)
  * type-token ratio (Bentz)
  * uid-ness (Pelligrino)
- * aoa (wor)
+ * aoa (Luniewska)
  * morphological complexity (Lupyan & Dale) -- missing
- * mean length -- missing
+ * mean length
 
 ```{r}
 # complexity bias
@@ -181,7 +182,7 @@ labs = read.csv("../data/ethnologue_labs.csv",
                 fileEncoding="latin1") %>%
          select(-CountryID, -LangStatus) 
 phoneme = read.csv("../data/moran_2012.csv") %>%
-          select(lang, pho, con, vow, logPop) %>%
+          select(lang, pho, con, vow, logPop, son, obs, mon, qua, ton ) %>%
           left_join(labs, by = c("lang" = "LangID")) %>%
           select(-lang) %>%
           rename(language = Name, log.pop.moran = logPop) %>%
@@ -200,7 +201,7 @@ aoa_central = aoa_data %>%
 
 # mean length - is this IPA? - fix this!
 asjp = read.csv("../data/asjp.csv") %>% 
-  select(1,11:110) %>%
+  select(1,1:109) %>%
   rename(language = names) %>%
   mutate(language = tolower(language)) %>%
   gather(word,translation,I:name) %>%
@@ -258,10 +259,8 @@ aoa_lun.aoa = aoa_lun.raw %>%
     as.character(language_aoa),"_"), function(x) x[1])))) %>%
   select(-3:-27) %>%
   rename(language = language_aoa) %>%
-  group_by(language, word_class) %>%
-  summarize(lun.mean.aoa= mean(aoa, na.rm = T)) %>%
-  spread(word_class,lun.mean.aoa) %>%
-  rename(lun.aoa.noun = noun, lun.aoa.verb = verb)
+  group_by(language) %>%
+  summarize(lun.mean.aoa= mean(aoa, na.rm = T))
 
 # mean length (just for fun)
 trans_col_is = which(is.element(names(aoa_lun.raw),names(aoa_lun.raw)
@@ -277,6 +276,9 @@ aoa_lun = aoa_lun.raw %>%
   left_join(aoa_lun.aoa) 
 ```
 
+```{r}
+atkinson = read.csv("../data/atkinson_2011.csv")
+```
 Merge population with all language variables
 ```{r}
 d = full_join(demo, cb) %>%
@@ -285,8 +287,8 @@ d = full_join(demo, cb) %>%
     full_join(aoa_central) %>%
     full_join(phoneme) %>%
     left_join(asjp.d) %>%
-    left_join(aoa_lun)
-
+    left_join(aoa_lun) %>%
+    distinct(language)
 ```
 
 ### Distributions of variables
@@ -297,8 +299,7 @@ d = full_join(demo, cb) %>%
 #}
 demo_vars = c("area","perimeter","n.neighbors","mean.temp","sum.precip","sd.temp","sd.precip","growingSeason","log.pop2","RatioL2","PercL2", "log.pop.moran")
 
-lang_vars = c("a.LDT","a.LDTinv","a.LDTscaled","H.LDT","H.LDTinv","H.LDTscaled","TTR.LDT","TTR.LDTinv","TTR.LDTscaled","complexity.bias","p.complexity.bias","mono.complexity.bias","open.complexity.bias","mean.length","lun.mean.length","m_rand","m_obs","mean_dependency_diff","fixed.random.baseline.slope","observed.slope","slope_dif","information.density","syllable.rate","information.rate","wb.mean.aoa","pho","con","vow", "aoa_lun", "lun.mean.length.noun",
-  "lun.mean.length.verb", "lun.aoa.noun", "lun.aoa.verb")
+lang_vars = c("a.LDT","a.LDTinv","a.LDTscaled","H.LDT","H.LDTinv","H.LDTscaled","TTR.LDT","TTR.LDTinv","TTR.LDTscaled","complexity.bias","p.complexity.bias","mono.complexity.bias","open.complexity.bias","mean.length","lun.mean.length","m_rand","m_obs","mean_dependency_diff","fixed.random.baseline.slope","observed.slope","slope_dif","information.density","syllable.rate","information.rate","wb.mean.aoa","pho","con","vow","son", "aoa_lun", "lun.mean.length.noun","lun.mean.length.verb", "lun.mean.aoa")
 
 d %>%
   gather(variable, num, area:length(d))  %>%
@@ -343,7 +344,7 @@ d %>%
 Describe data available for each language
 ```{r, fig.height = 6}
     d %>%
-    gather(variable, num, language:length(d))  %>%
+    gather(variable, num, mean.temp:length(d))  %>%
     group_by(variable) %>%
     summarize(counts = length(which(is.na(num) == F)))  %>%
     mutate(var_type = ifelse(is.element(variable, demo_vars), "demo", "lang")) %>%
@@ -355,32 +356,48 @@ Describe data available for each language
             legend.position = "none") +
       ylab("Number of languages (truncated at 150)") +
       ggtitle("Number languages per measure")
+
 ```
+     
 
 ### Relationships between variables
 Correlation matrix (stuff in the upper right quadrant matters)
 ```{r,  fig.height = 10, fig.width = 10}
 is.na(d) <- sapply(d, is.infinite)
-corrs = cor(d[,-c(1:3)], use = "pairwise.complete.obs")
+corrs = cor(d[,-c(1:3, 36)], use = "pairwise.complete.obs")
 corrplot(corrs)
 ```
 
 Scatter plots
 ```{r, fig.width=10, fig.height = 14}
+
+demo_vars = c("area","perimeter","n.neighbors","mean.temp","sum.precip","sd.temp","sd.precip","growingSeason","log.pop2","RatioL2","PercL2", "log.pop.moran","log.area", "log.perimeter", "log.n.neighbors", "log.sum.precip", "log.sd.temp", "log.sd.precip", "log.RatioL2" )
+
+lang_vars = c("a.LDT","a.LDTinv","a.LDTscaled","H.LDT","H.LDTinv","H.LDTscaled","TTR.LDT","TTR.LDTinv","TTR.LDTscaled","complexity.bias","p.complexity.bias","mono.complexity.bias","open.complexity.bias","mean.length","lun.mean.length","m_rand","m_obs","mean_dependency_diff","fixed.random.baseline.slope","observed.slope","slope_dif","information.density","syllable.rate","information.rate","wb.mean.aoa","pho","con","vow", "aoa_lun", "lun.mean.length.noun",
+"lun.mean.length.verb", "lun.mean.aoa", "log.length", "lexical.diversity", "aoa", "dependency.length", "lang_vars", "log.n.phonemes", "log.n.consonants", "log.n.vow", "log.asjp.mean.length", "log.n.vowels", "son")
+
 d.scatter = d %>% 
-  select(-a.LDT, -a.LDTinv, -a.LDTscaled, -H.LDTinv,
-         -H.LDTscaled, -TTR.LDT, -TTR.LDTinv, -TTR.LDTscaled,
-         -complexity.bias, -mono.complexity.bias,
-         -open.complexity.bias, -m_rand, -mean_dependency_diff,
-         -fixed.random.baseline.slope, -slope_dif,
-         -PercL2, -information.rate, -log.pop.moran,
-         -log.n.vow, -log.n.phonemes, -log.perimeter,
-         -observed.slope, -lun.mean.length) %>%
+ # select(-a.LDT, -a.LDTinv, -a.LDTscaled, -H.LDTinv,
+ #        -H.LDTscaled, -TTR.LDT, -TTR.LDTinv, -TTR.LDTscaled,
+ #        -complexity.bias, -mono.complexity.bias,
+ #        -open.complexity.bias, -m_rand, -mean_dependency_diff,
+ #        -fixed.random.baseline.slope, -slope_dif,
+  #       -PercL2, -information.rate, -log.pop.moran,
+  #       -log.n.vow, -log.n.phonemes, -log.perimeter,
+ #        -observed.slope, -lun.mean.length) %>%
+  select(log.n.consonants, log.n.vow, son,log.asjp.mean.length, 
+         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
+         log.RatioL2, log.pop2, growingSeason, mean.temp, 
+         log.sum.precip, log.area) %>%
+  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
+         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
+         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
   gather(lang_measure, lang_value, 
          which(is.element(names(.), lang_vars))) %>%
   group_by(lang_measure) %>%
   gather(pop_measure, pop_value,
          which(is.element(names(.), demo_vars)))
+  
 
 text.pos = d.scatter %>%
           group_by(lang_measure, pop_measure) %>%
@@ -400,21 +417,23 @@ d.scatter.corrs = d.scatter %>%
                           ifelse(p.value < .05 & estimate < 0, "neg",
                                  "none"))) %>%
   mutate(lab = paste("r = ", round(estimate,2),sig, sep = "")) %>%
-  mutate(pop_value = 1, lang_value = 1) %>% # this is a hack
+  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
   full_join(text.pos) %>%
   ungroup
 
 ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
-      geom_point(size = .5) +
-      geom_smooth(method = "lm", color = "green") +
-      facet_grid(lang_measure~pop_measure, scale = "free") +
-      geom_text(aes(min_pop + .4*dif_pop, min_lang + .05*dif_lang, label=lab),
-              data = d.scatter.corrs, color = "red") +
-      geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
+        geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
                 xmin = -Inf, xmax = Inf,
                 ymin = -Inf, ymax = Inf, alpha = 0.2) +
+      geom_point(size = .3) +
+      geom_smooth(method = "lm", color = "green") +
+      facet_grid(lang_measure~pop_measure, scale = "free") +
+      #geom_text(aes(min_pop + .4*dif_pop, min_lang + .05*dif_lang, label=lab),
+      #        data = d.scatter.corrs, color = "red") +
     scale_fill_manual(name = "grp",values = c( "mediumblue", "grey99","red1")) +
     theme_bw() +
+    xlab("Demographic variables") +
+    ylab("Language variables") +
     theme(legend.position = "none") 
 
 ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
@@ -424,6 +443,156 @@ ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
     theme_bw() +
     theme(legend.position = "none") 
   
+```
+
+Fits controlling for language family
+Aggregating across families
+```{r, fig.width=10, fig.height = 14}
+d.scatter.fam = d %>% 
+  select(log.n.consonants, log.n.vow, son, log.asjp.mean.length, 
+         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
+         log.RatioL2, log.pop2, growingSeason, mean.temp, 
+         log.sum.precip, log.area, langFamily) %>%
+  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
+         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
+         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
+  group_by(langFamily) %>% 
+  summarise_each(funs(mean(., na.rm = TRUE))) %>%
+  gather(lang_measure, lang_value, 
+         which(is.element(names(.), lang_vars))) %>%
+  group_by(lang_measure) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars)))
+
+is.na(d.scatter.fam) <- sapply(d.scatter.fam, is.infinite)
+
+# get correlations
+d.scatter.corrs = d.scatter.fam %>%
+  group_by(lang_measure, pop_measure) %>%
+  do(tidy(cor.test(~ .$pop_value + .$lang_value))) %>%
+  mutate(sig = ifelse(p.value < .05, "*", "")) %>%
+  mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
+                          ifelse(p.value < .05 & estimate < 0, "neg",
+                                 "none"))) %>%
+  mutate(lab = paste("r = ", round(estimate,2),sig, sep = "")) %>%
+  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
+  full_join(text.pos) %>%
+  ungroup
+
+ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
+        geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
+                xmin = -Inf, xmax = Inf,
+                ymin = -Inf, ymax = Inf, alpha = 0.2) +
+      geom_point(size = .3) +
+      geom_smooth(method = "lm", color = "green") +
+      facet_grid(lang_measure~pop_measure, scale = "free") +
+      #geom_text(aes(min_pop + .4*dif_pop, min_lang + .05*dif_lang, label=lab),
+      #        data = d.scatter.corrs, color = "red") +
+    scale_fill_manual(name = "grp", 
+                      values = c( "mediumblue", "grey99","red1")) +
+    theme_bw() +
+    xlab("Demographic variables") +
+    ylab("Language variables") +
+    theme(legend.position = "none") 
+```
+
+```{r}
+lmeasure <- "lexical.diversity"
+pmeasure <- "log.RatioL2"
+subdata <- filter(d.scatter.fam2,
+                  lang_measure == "lmeasure", pop_measure == "pmeasure")
+```
+
+```{r}
+shinyApp(
+  
+  ui = fluidPage(
+    selectInput("lmeasure", "Language Measure:", 
+                choices = as.character(unique(d.scatter.fam2$lang_measure)),
+                selected = "lexical.diversity"),
+    selectInput("pmeasure", "Population Measure:", 
+                choices = as.character(unique(d.scatter.fam2$pop_measure)),
+                selected = "log.RatioL2"),
+    plotOutput("scatterPlot"), 
+    verbatimTextOutput("lmer")
+  ),
+  
+  server = function(input, output) {
+    output$scatterPlot <- renderPlot({
+      qplot(pop_value, lang_value, 
+            data = filter(d.scatter.fam2, lang_measure == input$lmeasure & 
+                     pop_measure == input$pmeasure)) + 
+        geom_smooth(method="lm") + 
+        theme_bw()
+    })
+    
+    output$lmer <- textOutput({
+      summary(lmer(lang_value ~ pop_value + (pop_value | langFamily), 
+                   data = filter(d.scatter.fam2, 
+                                 lang_measure == input$lmeasure & 
+                                   pop_measure == input$pmeasure)))
+    })
+  },
+  
+  options = list(height = 500)
+)
+```
+
+
+Fits controling for family -- controlling for family in a linear model
+```{r, fig.width=10, fig.height = 14}
+
+#summary(lmer(lang_value~pop_value+ (1|langFamily), d.scatter))$coefficients["pop_value", "t value"]
+
+d.scatter.fam2 = d %>% 
+  filter(log.pop2>2) %>%
+  select(log.n.consonants, log.n.vow, son,  log.asjp.mean.length,
+         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
+         log.RatioL2, log.pop2, growingSeason, mean.temp, 
+         log.sum.precip, log.area,langFamily) %>%
+  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
+         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
+         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
+  gather(lang_measure, lang_value, 
+         which(is.element(names(.), lang_vars))) %>%
+  group_by(lang_measure) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars)))
+
+is.na(d.scatter.fam2) <- sapply(d.scatter.fam2, is.infinite) 
+d.scatter.fam2 <- filter(d.scatter.fam2, !is.na(pop_value), !is.na(lang_value))
+
+# get correlations
+d.scatter.corrs = d.scatter.fam2 %>%
+  group_by(lang_measure, pop_measure) %>%
+  #do(tidy(lm(lang_value ~ pop_value * langFamily, data = .))) %>%
+  do(tidy(lmer(lang_value ~ pop_value + (pop_value|langFamily), data=.))) %>%
+  filter(term == "pop_value") %>%
+  #do(summary(lmer(.$lang_value~.$pop_value+   #(1|.$langFamily)))$coefficients["pop_value", "t value"]) %>%
+  # mutate(sig = ifelse(p.value < .05, "*", "")) %>%
+    mutate(sig = ifelse(abs(statistic) > 1.96, "*", "")) %>%
+#   mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
+#                           ifelse(p.value < .05 & estimate < 0, "neg",
+#                                  "none"))) %>%
+  mutate(sig.col = ifelse(statistic > 1.96, "pos",
+                          ifelse(statistic < -1.96, "neg",
+                                 "none"))) %>%
+  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
+  ungroup
+
+ggplot(d.scatter.fam2, aes(x = pop_value, y = lang_value)) +
+        geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
+                xmin = -Inf, xmax = Inf,
+                ymin = -Inf, ymax = Inf, alpha = 0.2) +
+      geom_point(size = .3, aes(col = langFamily)) +
+      geom_smooth(method = "lm", color = "green") +
+      facet_grid(lang_measure~pop_measure, scales = "free") +
+     scale_fill_manual(name = "grp", 
+                       values = c( "mediumblue", "grey99","red1")) +
+    theme_bw() +
+    xlab("Demographic variables") +
+    ylab("Language variables") +
+    theme(legend.position = "none")
 ```
 
 WALS features of complexity
