@@ -7,3 +7,5 @@ tidyr
 corrplot
 broom
 plyr
+Matrix
+lme4

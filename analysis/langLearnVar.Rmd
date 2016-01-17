@@ -10,20 +10,6 @@ output:
   
 ***
 ***
-Across several sets of analyses, I've been looking at the relationship between proxies for learnability pressures and features of language. Here I try to aggregate these analyses.
-
-There are three motivating theoretical ideas. The first is the idea of multiple timescales: We assume there are multiple timescales -- in-the-moment, development, and language evolution -- that are relevant to the phenomenon of language. 
-
-Second, we consider the possibility that language adapts to its contextual niche at all timescales. At the in-the-moment timescales, this might mean taking into account the character of the referential alternatives when formulating an utterance. At the developmental timescale, we assume the learner has acquired a lexicon that is tailored to the child's cognitive capacity. And, at the evolution timescale, we consider the possibility that language systems might adapt over time to the learnability pressures of the population ("Linguistic Niche Hypothesis," Lupyan & Dale, 2011). This might mean, for example, that languages with more adult second language speakers become easier to learn.
-
-The third motivating theory comes from pragmatics: competing communicative pressures that give rise to equilibria. These competeing pressures have been formulated in a number of different ways across the literature, e.g., Horn's Speaker and Hearer pressure. 
-The consequences of these pressures have been considered primarily at the timescale of in-the-moment communication. The present work extends the relevance of these pressures to longer timescales. In particuar, these analyses explore the following hypothesis: The same equilibria that emerge as a consequence of communicative pressures at the pragmatic timescale, also emerge at the developmental and language evolution timescales. These analyses try to explore predictions of this hypothesis.
-
-As a first step in testing this proposals, we try to aggregate demographic predictors and linguistic outocome variables.
-
-Next, we look for parallels between ontonogeny and cross-linguistic variability. (i.e. Are the features of easy-to-learn languages shared with the vocabularies of young children?)
-  
-A secondardy prediction is that languages that are easier to learn for L2 speakers should also be easier to learn for children. This could be tested by looking at mean AOA in a language and learnability features. 
 
 ```{r, echo = F, warning = F, message = F}
 rm(list = ls())
@@ -54,113 +40,153 @@ cor.mtest <- function(mat, conf.level = 0.95) {
       }
     }
   return(list(p.mat, lowCI.mat, uppCI.mat))
-  }
+}
+
+removeOutlier <- function(dataCol, num_deviations) {
+  boolean.outlier = abs(dataCol - mean(dataCol, na.rm = T)) > 
+                    num_deviations*sd(dataCol, na.rm = T)
+  df = bind_cols(as.data.frame(boolean.outlier), as.data.frame(dataCol))
+  cleaned.dataCol = ifelse(df$boolean.outlier, NA, df$dataCol)
+  cleaned.dataCol
+}
 ```
 
-## Learnability and language variables 
+## Read in datasets
+ * Lupyan & Dale (2010): Demographic variables and syntactic complexity
+    + log population size (pop_log)
+    + area (area)
+    + number of bordering countries (n.neigbors)
+    + mean temperature (mean.temp)
+    + variability in temperature (sd.temp)
+    + total precipitation (sum.precip)
+    + variability in precipition (sd.precip)
+    + growing season (growing.season)
+    + latitude (lat)
+    + longitude (long)
+    + [syntactic complexity]
+ * Bentz, et al. (2015): L2 learners and lexical diversity
+    + number of first language speakers (n.L1.speakers)
+    + number of second language speakers (n.L2.pseakers)
+    + ratio of L2 to L1 (ratio.L2.L1)
+    + parameters of Zipf-Mandelbrot’s law for lexical diversity (scaled.LDT.ZM)
+    + Shannon entropy of lexical diversity (scaled.LDT.H)
+    + Type-token ratio as measure of lexical diversity (scaled.LDT.TTR)
+ * Atkinson (2011): Phonemic diversity and best-fitting distance from origin
+    + vowel diversity (normalized.vowel.diversity)
+    + consonant diversity (normalized.consonant.diversity)
+    + tone diversity (normalized.tone.diversity)
+    + phoneme diversity (normalized.phoneme.diversity)
+    + estimated distance for language origin (distance.from.origin)
+ * Lewis & Frank (under review): Complexity bias
+    + complexity bias, correlation between length and complexity (complexity.bias)
+    + bias partially out spoken frequency (p.complexity.bias)
+    + bias for only monosyllabic words (mono.complexity.bias)
+    + bias for only open class words (open.complexity.bias)
+ * Futrell, Mahowald, & Gibson (2015): Dependency length
+    + mean observed dependency length in characters (mean.dependency.length)
+ * Pellegrino, Coupe, & Marsico (2015): Information density
+     + information.density
+     + syllable.rate
+     + information.rate
+ * Moran, McCloy, & Wright (2012): Phonemic inventory
+    + number of phonemes (n.phonemes)
+    + number of cononsants (n.consonants)
+    + number of vowels (n.vowels)
+    + number of sonorants (n.sonorants)
+    + number of obsruents (n.obsruents)
+    + number of monophthongs  (n.monophthongs)
+    + number of quality-only monophthong constrasts (n.qual.monophthongs)
+    + number of tones (n.tones)
+ * Wichmann, et al. (2013): Mean word length
+    + mean length in number of characters (mean.length)
+ * Luniewska, et al. (2015): Age of acquisition (aoa)
+    + mean adult-judged age of acquistion (mean.aoa)
 
-### Read in all data
+Language codes (from WALS) - WALS, ISO, ascii-name. These are used to merge across datasets.
+```{r}
+codes = read.csv("../data/language_codes.csv") %>%
+  select(language, WALS, ISO) %>%
+  mutate(ISO = unlist(lapply(strsplit(as.character(ISO),
+                                      ","),function(x) x[1])))
+# in cases where there are two ISO codes, takes first
+```
 
-#### Population features
-Merge together all population learnability features:
-
-* population size (Lupyan & Dale)
-* area (Lupyan & Dale)
-* number of neighbors (Lupyan & Dale)
-* temperature (Lupyan & Dale)
-* number of L2 speakers (Bentz)
-
-Read in Lupyan and Dale data
+Lupyan & Dale (2010): Demographic variables and syntactic compelxity
 ```{r}
 ld = read.table("../data/lupyan_2010.txt", fill = T, 
                header = T, sep = "\t", na.strings = "*") %>%
-    rename(log.pop2 = logpop2, 
+    left_join(codes, c("walsCode" = "WALS")) %>%
+    rename(pop_log = logpop2, 
            mean.temp = aveTemp,
            n.neighbors = numNeighbors,
            sum.precip = sumPrecip,
            sd.temp = sdTemp,
-           sd.precip = sdPrecip)
+           sd.precip = sdPrecip,
+           lang.family = langFamily,
+           lang.genus = langGenus,
+           native.country = nativeCountry,
+           native.country.area = nativeCountryArea,
+           growing.season = growingSeason)
 
-# fix language labels
-ld$ethnologue_lang_name = tolower(ld$ethnologue_lang_name)
-ld$ethnologue_lang_name[ld$ethnologue_lang_name == "standard german"] <- "german"
-ld$ethnologue_lang_name[ld$ethnologue_lang_name == "tosk albanian"] <- "albanian"
-ld$ethnologue_lang_name[ld$ethnologue_lang_name == "catalan-valencian-balear"] <- "catalan"
-ld$ethnologue_lang_name[ld$ethnologue_lang_name == "haitian creole french"] <- "haitian.creole"
-ld$ethnologue_lang_name[ld$ethnologue_lang_name == "irish gaelic"] <- "irish"
-ld$ethnologue_lang_name[ld$ethnologue_lang_name == "central khmer"] <- "khmer"
-
-# Need to collapse across different dialects of same language (e.g. "eastern mongolian" and "peripherial mongolian") [arabic, azerbaijani, chinese, hmong, mongolian, yiddish]
-
-# but first, remove sign languages (e.g."chinese sign language")
-ld = ld[-which(grepl("sign language", ld$ethnologue_lang_name)),]
-
-ld$eln2 = ifelse(grepl("arabic", ld$ethnologue_lang_name), "arabic",
-                   ifelse(grepl("azerbaijani", ld$ethnologue_lang_name), "azerbaijani",
-                          ifelse(grepl("chinese", ld$ethnologue_lang_name), "chinese",
-                                 ifelse(grepl("hmong", ld$ethnologue_lang_name), "hmong",
-                                        ifelse(grepl("mongolian", ld$ethnologue_lang_name), "mongolian",
-                                               ifelse(grepl("yiddish", ld$ethnologue_lang_name), "yiddish",
-                                                      ld$ethnologue_lang_name))))))
-ld$eln2 = as.factor(ld$eln2)
-
-# 12 langs not in lupyan 2010, but in LF [belarusian, bosnian, cebuana, croatian, esperanto, filipino, kanada, latin, norwegian, persian, punjabi, serbian]
-```
-
-```{r}
 # get means across language
 demo_ld = ld %>%
-     group_by(eln2) %>%
+     group_by(ISO) %>%
      summarise_each(funs(mean(., na.rm = TRUE)), 
                     c(8:9, 16:121))  %>%
-     select(1, 93:95, 100:101, 103:105, 108)
+     select(1:3, 93:95, 100:101, 103:105, 108)
 
 # add in data family
 fams = ld %>%
-      group_by(eln2) %>%
+      group_by(ISO) %>%
       filter(row_number() == 1) %>%
-      select(eln2, langFamily, langGenus)  
+      select(ISO, lang.family, lang.genus, native.country,
+             native.country.area, language)  
 
-demo_ld = left_join(fams, demo_ld, by = "eln2") %>%
-          rename(language = eln2) %>%
+demo_ld = left_join(fams, demo_ld, by = "ISO") %>%
           ungroup()
 ```
 
-Read in Bentz data (Note here that we are only looking at languages from the UDHR corpus. The other corpora have smaller languages only.)
+Bentz, et al. (2015): L2 learners and lexical diversity
+Note here that we are only looking at languages from the UDHR corpus. The other corpora have smaller languages only.
 ```{r}
-demo_bentz = read.csv("../data/bentz_2015.csv") %>%
+bentz = read.csv("../data/bentz_2015.csv") %>%
     gather(temp, LDT, starts_with("LDT")) %>% 
     unite(temp1, measure, temp, sep = ".") %>% 
     spread(temp1, LDT) %>%
     filter(text == "UDHR") %>%
-    select(-iso_639_3, -fileName, 
-           -contains("Stock"), -contains("speakers"),
-           -contains("Region"), -text,
-           -genus_wals, -family_wals)  %>%
-    mutate(Language = gsub("[[:space:]]", "", tolower(Language))) %>%
-    rename(language = Language)
-
-demo_bentz$language[demo_bentz$language == "swahili,tanzania"] <- "swahili"
-demo_bentz$language[demo_bentz$language == "irishgaelic"] <- "irish"
+    select(iso_639_3, RatioL2, a.LDTscaled, 
+           H.LDTscaled, TTR.LDTscaled, Stock,
+           Region, L1_speakers, L2_speakers) %>%
+    rename(ISO = iso_639_3,
+           n.L1.speakers = L1_speakers,
+           n.L2.speakers = L2_speakers,
+           ratio.L2.L1 = RatioL2,
+           stock = Stock,
+           region = Region,
+           scaled.LDT.TTR = TTR.LDTscaled,
+           scaled.LDT.ZM = a.LDTscaled,
+           scaled.LDT.H = H.LDTscaled) %>%
+    left_join(codes, by="ISO") %>%
+    mutate(ISO = as.factor(ISO)) %>%
+    select(-language, -WALS) 
+  
 ```
 
-Join all population variables
+Atkinson (2011)
 ```{r}
-demo = left_join(demo_ld, demo_bentz, by="language") %>%
-       mutate(language = as.factor(language))
+atkinson = read.csv("../data/atkinson_2011.csv") %>%
+  select(normalized.vowel.diversity,
+         normalized.consonant.diversity,	
+         normalized.tone.diversity,
+         normalized.phoneme.diversity, ISO, 
+         distance.from.origin) %>%
+  mutate(ISO = unlist(lapply(strsplit(as.character(ISO),
+                                      " "),function(x) x[1]))) %>%
+  left_join(codes, by="ISO") %>%
+  select(-language, -WALS)
 ```
 
-#### Linguistic features
-Merge together all linguistic features:
-
- * complexity bias (Lewis & Frank)
- * dependency length (Futrell)
- * type-token ratio (Bentz)
- * uid-ness (Pelligrino)
- * aoa (Luniewska)
- * morphological complexity (Lupyan & Dale) -- missing
- * mean length
-
+Lewis & Frank (under review): Complexity Bias
 ```{r}
 # complexity bias
 cb = read.csv("../data/lewis_2015.csv") %>%
@@ -168,42 +194,52 @@ cb = read.csv("../data/lewis_2015.csv") %>%
               p.complexity.bias = p.corr,
               mono.complexity.bias = mono.cor,
               open.complexity.bias = open.cor) %>%
-    select(-X.1, -X, -lower.ci, -upper.ci, -checked, -mean.length) %>%
-    filter(language != "english") # english is an outlier in this dataset because norms colelcted in english
+      left_join(codes, by="language") %>%
+    select(-X.1, -X, -lower.ci, -upper.ci, -checked,
+           -mean.length) %>%
+    distinct(ISO) %>%
+   filter(language != "english") %>% # english is an outlier in this dataset because norms colelcted in english
+  select(-language, -WALS)
+```
 
-# dependency length
-dl = read.csv("../data/futrell_2015.csv")
+Futrell, Mahowald, & Gibson (2015): Dependency length
+```{r}
+dl = read.csv("../data/futrell_2015.csv") %>%
+  left_join(codes, by="language") %>%
+  select(-language, -WALS, -fixed.random.baseline.slope, 
+         -observed.slope, -m_rand) %>%
+  rename(mean.dependency.length = m_obs)
 
-# UID
-uid = read.csv("../data/pellegrino_2015.csv")
+```
 
-# phoneme inventory
-labs = read.csv("../data/ethnologue_labs.csv", 
-                fileEncoding="latin1") %>%
-         select(-CountryID, -LangStatus) 
+Pellegrino, Coupe, & Marsico (2015): Information density
+```{r}
+uid = read.csv("../data/pellegrino_2015.csv")  %>%
+  left_join(codes, by="language") %>%
+  select(-language, -WALS)
+
+```
+
+Moran, McCloy, & Wright (2012): Phonemic inventory
+```{r}
 phoneme = read.csv("../data/moran_2012.csv") %>%
-          select(lang, pho, con, vow, logPop, son, obs, mon, qua, ton ) %>%
-          left_join(labs, by = c("lang" = "LangID")) %>%
-          select(-lang) %>%
-          rename(language = Name, log.pop.moran = logPop) %>%
-          mutate(language = tolower(language))
+          select(ISO, pho, con, vow, son, 
+                 obs, mon, qua, ton) %>%
+          rename(n.phonemes = pho,
+                 n.consonants = con,
+                 n.vowels = vow,
+                 n.sonorants = son,
+                 n.obstruents = obs,
+                 n.monophthongs = mon,
+                 n.qual.monophthongs = qua,
+                 n.tones = ton)
+```
 
-# aoa (wordbank)
-aoa_data = read.csv("../data/aoa_data.csv") %>%
-          filter( aoa > 5 & aoa < 31) 
-
-aoa_central = aoa_data %>% 
-  mutate(language = tolower(language)) %>%
-  filter(measure == "understands", 
-         lexical_category == "nouns") %>%
-  group_by(language) %>%
-  summarise(wb.mean.aoa = mean(aoa))
-
-# mean length - is this IPA? - fix this!
-asjp = read.csv("../data/asjp.csv") %>% 
+Wichmann, et al. (2013): Mean word length
+```{r}
+# note is this IPA? - fix this!
+ml = read.csv("../data/wichmann_2013.csv") %>% 
   select(1,1:109) %>%
-  rename(language = names) %>%
-  mutate(language = tolower(language)) %>%
   gather(word,translation,I:name) %>%
   mutate(nchar = unlist(
     lapply(
@@ -215,196 +251,214 @@ asjp = read.csv("../data/asjp.csv") %>%
   filter(translation != "")
 
 # subset to only those words in the swadesh list (n = 40)
-swadesh.words  = asjp[asjp$language == "afrikaans", "word"] 
-asjp = asjp %>%
+swadesh.words  = ml[ml$ISO == "gwj", "word"] 
+ml = ml %>%
       filter(is.element(word, swadesh.words))
 
-# fix language names so map onto (minimally) cb dataset
-asjp$language[asjp$language == "standard_arabic"] <- "arabic"
-asjp$language[asjp$language == "standard_german"] <- "german"
-asjp$language[asjp$language == "haitian_creole"] <- "haitian.creole"
-asjp$language[asjp$language == "igbo_onitsha"] <- "igbo"
-asjp$language[asjp$language == "irish_gaelic"] <- "irish"
-asjp$language = ifelse(grepl("norwegian", asjp$language),
-                       "norwegian", asjp$language)
-asjp$language = ifelse(grepl("javanese", asjp$language),
-                       "javanese", asjp$language)
-asjp$language = ifelse(grepl("armenian", asjp$language),
-                       "armenian", asjp$language)
-asjp$language = ifelse(grepl("azerbaijani", asjp$language),
-                       "azerbaijani", asjp$language)
-asjp$language = ifelse(grepl("chinese", asjp$language),
-                       "chinese", asjp$language)
-asjp$language = ifelse(grepl("hmong", asjp$language),
-                       "hmong", asjp$language)
-asjp$language = ifelse(grepl("punjabi", asjp$language),
-                       "punjabi", asjp$language)
-asjp$language = ifelse(grepl("yiddish", asjp$language),
-                       "yiddish", asjp$language)
-
-asjp.d = asjp %>%
-        group_by(language) %>%
-        summarize(asjp.mean.length = mean(nchar, na.rm = T)) 
+ml.d = ml %>%
+        group_by(ISO) %>%
+        summarize(mean.length = mean(nchar, na.rm = T)) 
 ```
 
-AOA (Luniewska)
+Luniewska, et al. (2015): Age of acquistion (Aoa)
 ```{r}
-aoa_lun.raw = read.csv("../data/luniewska_2015.csv", header = T, 
-                   fileEncoding = "latin1")
+aoa.raw = read.csv("../data/luniewska_2015.csv", 
+                       header = T, fileEncoding = "latin1")
   
-# aoas
-aoa_lun.aoa = aoa_lun.raw %>%
-  gather(language_aoa, aoa, grep("aoa", names(aoa_lun.raw))) %>%
+aoa = aoa.raw %>%
+  gather(language_aoa, aoa, grep("aoa", 
+                                 names(aoa.raw))) %>%
   mutate(language_aoa = tolower(unlist(lapply(strsplit(
     as.character(language_aoa),"_"), function(x) x[1])))) %>%
   select(-3:-27) %>%
   rename(language = language_aoa) %>%
-  group_by(language) %>%
-  summarize(lun.mean.aoa= mean(aoa, na.rm = T))
-
-# mean length (just for fun)
-trans_col_is = which(is.element(names(aoa_lun.raw),names(aoa_lun.raw)
-                                [!grepl("aoa", names(aoa_lun.raw))]))
-trans_col_is = trans_col_is[-1:-2]
-aoa_lun = aoa_lun.raw %>%
-  gather(language, translation, trans_col_is) %>%
-  mutate(language = tolower(language)) %>%
-  select(-3:-27) %>%
-  group_by(language) %>%
-  mutate(length = nchar(translation)) %>%
-  summarize(lun.mean.length = mean(length, na.rm = T)) %>%
-  left_join(aoa_lun.aoa) 
+    left_join(codes, by="language") %>%
+  group_by(ISO) %>%
+  summarize(mean.aoa = mean(aoa, na.rm = T))
 ```
 
+Merge data frames together by ISO
+```{r }
+d = full_join(demo_ld, cb, by = "ISO") %>%
+    full_join(bentz, by = "ISO") %>%
+    full_join(dl, by = "ISO") %>%
+    full_join(uid, by = "ISO") %>%
+    full_join(phoneme, by = "ISO") %>%
+    full_join(ml.d, by = "ISO") %>%
+    full_join(aoa, by = "ISO") %>%
+    full_join(atkinson, by = "ISO") %>%
+    distinct(ISO) %>%
+    filter(!is.na(ISO), ISO !="") %>%
+    mutate(ISO = as.factor(ISO))
+```
+
+Remove outliers and check for normality
+```{r, fig.width = 15, fig.height = 10}
+d.clean = d %>%
+  mutate_each(funs(removeOutlier(.,3)), c(-ISO, -lang.family, 
+              -native.country, -native.country.area, 
+         -lang.genus, -language, -stock, -region))
+
+d.clean %>%
+  select(-ISO, -lang.family, -native.country, -native.country.area, 
+         -lang.genus, -language, -stock, -region) %>%
+  gather(var, value) %>%
+  ggplot(aes(sample = value)) + 
+  stat_qq(na.rm = T, size = .2) + 
+  facet_wrap( ~ var, scales = "free") +
+  theme_bw()
+```
+
+The following variables look right-skewed. 
 ```{r}
-atkinson = read.csv("../data/atkinson_2011.csv")
+NN_vars = c("area", "perimeter", "n.neighbors", "sd.precip",
+           "ratio.L2.L1", "n.L1.speakers", "n.L2.speakers",
+           "n.phonemes", "n.consonants","n.vowels", "n.sonorants",
+           "n.obstruents", "n.monophthongs", "n.qual.monophthongs", "n.tones")
 ```
-Merge population with all language variables
+
+Take the log of these variables, and check for normality again.
+```{r, fig.width = 15, fig.height = 10}
+d.clean = d.clean %>%
+  mutate_each(funs(log = log(.), dummy =  sum(.)),
+              one_of(NN_vars)) %>%
+  select(-contains("dummy")) %>%
+  select(-one_of(NNvars))
+
+d.clean %>%
+  select(-ISO, -lang.family, -native.country, -native.country.area, 
+         -lang.genus, -language, -stock, -region) %>%
+  gather(var, value) %>%
+  ggplot(aes(sample = value)) + 
+  stat_qq(na.rm = T, size = .2) + 
+  facet_wrap( ~ var, scales = "free") +
+  theme_bw()
+```
+
+Check for normality of variables using Shapiro-Wilk Normality Test
 ```{r}
-d = full_join(demo, cb) %>%
-    full_join(dl) %>%
-    full_join(uid) %>%
-    full_join(aoa_central) %>%
-    full_join(phoneme) %>%
-    left_join(asjp.d) %>%
-    left_join(aoa_lun) %>%
-    distinct(language)
+is.na(d.clean) <- sapply(d.clean, is.infinite)
+
+normality.test = d.clean %>%
+  summarise_each(funs(unlist(tidy(shapiro.test(.))[2])),
+                 c(-ISO, -lang.family, -native.country, -native.country.area, 
+                     -lang.genus, -language, -stock, -region)) %>%
+  gather(variable, shapiro.p.value) %>%
+  mutate(normal = ifelse(shapiro.p.value > .05, TRUE, FALSE)) %>%
+  summary()
+```
+By this test, only 14 variables normal. But, I think this is the best we can do (?). 
+
+Look at histograms of all variables. 
+```{r,  fig.height = 10, fig.width = 10, eval = F}
+demo_vars = c("native.country.area", "lat", "lon", "perimeter_log", "n.neighbors_log", "mean.temp", "sum.precip", "sd.temp", "growing.season", "pop_log", "area_log", "perimeter_log", "n.neighbors_log", "sd.precip_log", "ratio.L2.L1_log", "n.L1.speakers_log", "n.L2.speakers_log", "distance.from.origin")
+
+lang_vars = c(setdiff(names(d.clean), demo_vars))[-c(1:5, 13,14)]
+
+d.clean %>%
+  gather(variable, num, lat:length(d.clean))  %>%
+  filter(variable != "stock", variable != "region") %>%
+  mutate(var_type = ifelse(is.element(variable, demo_vars),
+                           "demo", "lang"),
+         num = as.numeric(as.character(num))) %>%
+  arrange(var_type) %>% 
+  mutate(variable = factor(variable, variable)) %>%
+  ggplot(aes(x=num, fill = var_type)) + 
+    geom_histogram(position = "identity") +
+    facet_wrap( ~ variable, scales = "free") + 
+    theme_bw()
 ```
 
-### Distributions of variables
-```{r,  fig.height = 10, fig.width = 10}
-#l = ""
-#for (i in 1:length(names(d))) {
-#  l = paste(l, '"', names(d)[i], '",', sep = "")
-#}
-demo_vars = c("area","perimeter","n.neighbors","mean.temp","sum.precip","sd.temp","sd.precip","growingSeason","log.pop2","RatioL2","PercL2", "log.pop.moran")
+Number of variables we have data for, for each language
+```{r, fig.height = 6, eval = F}
+# as is this plot is too hard to read
+d.clean %>%
+  gather(variable, num, c(7:21, 23:48))  %>%
+  group_by(language) %>%
+  summarize(counts = length(which(is.na(num) == F))) %>%
+  filter(!is.na(counts), counts > 10, !is.na(language)) %>%
+  ggplot(aes(y = counts, x = language)) + 
+    geom_bar(stat = "identity") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ylab("Number of variables (minimum 10)") +
+    ggtitle("Number variables per language")
+```
 
-lang_vars = c("a.LDT","a.LDTinv","a.LDTscaled","H.LDT","H.LDTinv","H.LDTscaled","TTR.LDT","TTR.LDTinv","TTR.LDTscaled","complexity.bias","p.complexity.bias","mono.complexity.bias","open.complexity.bias","mean.length","lun.mean.length","m_rand","m_obs","mean_dependency_diff","fixed.random.baseline.slope","observed.slope","slope_dif","information.density","syllable.rate","information.rate","wb.mean.aoa","pho","con","vow","son", "aoa_lun", "lun.mean.length.noun","lun.mean.length.verb", "lun.mean.aoa")
+Number of languages we have data, for each variable
+```{r, fig.height = 6}
+d.clean %>%
+  gather(variable, num, lat:length(d.clean))  %>%
+  filter(variable != "stock", variable != "region") %>%
 
-d %>%
-  gather(variable, num, area:length(d))  %>%
+  group_by(variable) %>%
+  summarize(counts = length(which(is.na(num) == F)))  %>%
   mutate(var_type = ifelse(is.element(variable, demo_vars),
                            "demo", "lang")) %>%
-  ggplot(aes(x=num, fill = var_type)) + 
-    geom_histogram(position = "identity") +
-    facet_wrap( ~ variable, scales = "free") + 
-    theme_bw()
+  mutate(counts_trunc = ifelse(counts > 150, 150, counts))  %>%
+  arrange(var_type) %>% 
+  mutate(variable = factor(variable, variable)) %>%
+  ggplot(aes(y=counts_trunc, x = variable, fill = var_type)) + 
+    geom_bar(stat = "identity") +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1),
+          legend.position = "none") +
+    ylab("Number of languages (truncated at 150)") +
+    ggtitle("Number languages per measure")
 ```
 
-Take the log of of the non-normal-looking variables and re-plot
-```{r, fig.height = 10, fig.width = 10}
-d = d %>%
-    mutate(log.area = log(area),
-              log.perimeter = log(perimeter),
-              log.n.neighbors = log(n.neighbors),
-              log.sum.precip = log(sum.precip),
-              log.sd.temp = log(sd.temp),
-              log.sd.precip = log(sd.precip),
-              log.RatioL2= log(RatioL2),
-              log.n.phonemes = log(pho),
-              log.n.consonants = log(con),
-              log.n.vow = log(vow),
-              log.asjp.mean.length = log(asjp.mean.length))%>%
-    select(-area, -perimeter, -n.neighbors, -sd.temp,
-           -sd.precip, -RatioL2, -sum.precip, -pho, -con, -vow, -asjp.mean.length)
+Look at number of languages intersecting each variable 
+```{r}
+arealControl_vars = c("stock", "region", "lang.family", "lang.genus", 
+                      "native.country", "native.country.area")
 
-demo_vars = c(intersect(names(d), demo_vars), "log.area", "log.perimeter", "log.n.neighbors", "log.sum.precip", "log.sd.temp", "log.sd.precip", "log.RatioL2")
-lang_vars = c(intersect(names(d), lang_vars), "lang_vars", "log.n.phonemes", "log.n.consonants", "log.n.vow", "log.asjp.mean.length")
-
-d %>%
-  gather(variable, num, mean.temp:length(d))  %>%
-  mutate(var_type = ifelse(is.element(variable, demo_vars), "demo", "lang")) %>%
-  arrange(var_type) %>%
-  ggplot(aes(x=num, fill = var_type)) + 
-    geom_histogram(position = "identity") +
-    facet_wrap( ~ variable, scales = "free") + 
-    theme_bw()
-```
-
-Describe data available for each language
-```{r, fig.height = 6}
-    d %>%
-    gather(variable, num, mean.temp:length(d))  %>%
-    group_by(variable) %>%
-    summarize(counts = length(which(is.na(num) == F)))  %>%
-    mutate(var_type = ifelse(is.element(variable, demo_vars), "demo", "lang")) %>%
-    mutate(counts_trunc = ifelse(counts > 150, 150, counts))  %>%
-    ggplot(aes(y=counts_trunc, x = variable, fill = var_type, order = variable)) + 
-      geom_bar(stat = "identity") +
-      theme_bw() +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1),
-            legend.position = "none") +
-      ylab("Number of languages (truncated at 150)") +
-      ggtitle("Number languages per measure")
-
+d.clean %>%
+  gather(lang_measure, lang_value, 
+         which(is.element(names(.), c(lang_vars, arealControl_vars)))) %>%
+  group_by(lang_measure) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars))) %>%
+  group_by(lang_measure, pop_measure) %>%
+  mutate(both_not_na = !is.na(lang_value) & !is.na(pop_value)) %>%
+  summarise(n_languages = length(which(both_not_na == TRUE))) %>%
+  ggplot(aes(pop_measure, lang_measure, group = lang_measure)) +
+      geom_tile(aes(fill = n_languages)) + 
+      geom_text(aes(fill = n_languages, label = n_languages)) +
+      scale_fill_gradient(low = "white", high = "red")  +
+      xlab("population variables") + 
+      ylab("language variables") + 
+      ggtitle("Number languages between variables") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
      
-
-### Relationships between variables
+## Relationships between variables
+```{r,  fig.height = 10, fig.width = 10, eval = F}
 Correlation matrix (stuff in the upper right quadrant matters)
-```{r,  fig.height = 10, fig.width = 10}
 is.na(d) <- sapply(d, is.infinite)
 corrs = cor(d[,-c(1:3, 36)], use = "pairwise.complete.obs")
 corrplot(corrs)
 ```
 
 Scatter plots
-```{r, fig.width=10, fig.height = 14}
+```{r, fig.width=10, fig.height = 14, eval = F}
 
-demo_vars = c("area","perimeter","n.neighbors","mean.temp","sum.precip","sd.temp","sd.precip","growingSeason","log.pop2","RatioL2","PercL2", "log.pop.moran","log.area", "log.perimeter", "log.n.neighbors", "log.sum.precip", "log.sd.temp", "log.sd.precip", "log.RatioL2" )
+# these are the variables we care about for the paper
+demo_vars_crit = c("n.neighbors_log",
+              "mean.temp", "sum.precip", "sd.temp", "growing.season",
+              "pop_log", "area_log" "n.neighbors_log",
+              "sd.precip_log", "ratio.L2.L1_log", "distance.from.origin")
 
-lang_vars = c("a.LDT","a.LDTinv","a.LDTscaled","H.LDT","H.LDTinv","H.LDTscaled","TTR.LDT","TTR.LDTinv","TTR.LDTscaled","complexity.bias","p.complexity.bias","mono.complexity.bias","open.complexity.bias","mean.length","lun.mean.length","m_rand","m_obs","mean_dependency_diff","fixed.random.baseline.slope","observed.slope","slope_dif","information.density","syllable.rate","information.rate","wb.mean.aoa","pho","con","vow", "aoa_lun", "lun.mean.length.noun",
-"lun.mean.length.verb", "lun.mean.aoa", "log.length", "lexical.diversity", "aoa", "dependency.length", "lang_vars", "log.n.phonemes", "log.n.consonants", "log.n.vow", "log.asjp.mean.length", "log.n.vowels", "son")
+lang_vars_crit = c("p.complexity.bias","scaled.LDT.TTR", "mean.dependency.length",
+              "mean.length", "mean.aoa",
+              "n.consonants_log", "n.phonemes_log")
 
-d.scatter = d %>% 
- # select(-a.LDT, -a.LDTinv, -a.LDTscaled, -H.LDTinv,
- #        -H.LDTscaled, -TTR.LDT, -TTR.LDTinv, -TTR.LDTscaled,
- #        -complexity.bias, -mono.complexity.bias,
- #        -open.complexity.bias, -m_rand, -mean_dependency_diff,
- #        -fixed.random.baseline.slope, -slope_dif,
-  #       -PercL2, -information.rate, -log.pop.moran,
-  #       -log.n.vow, -log.n.phonemes, -log.perimeter,
- #        -observed.slope, -lun.mean.length) %>%
-  select(log.n.consonants, log.n.vow, son,log.asjp.mean.length, 
-         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
-         log.RatioL2, log.pop2, growingSeason, mean.temp, 
-         log.sum.precip, log.area) %>%
-  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
-         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
-         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
+d.scatter = d.clean %>% 
   gather(lang_measure, lang_value, 
-         which(is.element(names(.), lang_vars))) %>%
+         which(is.element(names(.), lang_vars_crit))) %>%
   group_by(lang_measure) %>%
   gather(pop_measure, pop_value,
-         which(is.element(names(.), demo_vars)))
-  
-
-text.pos = d.scatter %>%
-          group_by(lang_measure, pop_measure) %>%
-          summarize(min_lang = min(lang_value, na.rm = T),
-                    min_pop = min(pop_value, na.rm = T),
-                    dif_lang =  max(lang_value, na.rm = T) - min_lang,
-                    dif_pop =  max(pop_value, na.rm = T) - min_pop) 
+         which(is.element(names(.), demo_vars_vrit))) %>%
+  select(pop_measure, lang_measure, pop_value, lang_value)
 
 is.na(d.scatter) <- sapply(d.scatter, is.infinite)
 
@@ -416,9 +470,7 @@ d.scatter.corrs = d.scatter %>%
   mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
                           ifelse(p.value < .05 & estimate < 0, "neg",
                                  "none"))) %>%
-  mutate(lab = paste("r = ", round(estimate,2),sig, sep = "")) %>%
   mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
-  full_join(text.pos) %>%
   ungroup
 
 ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
@@ -428,26 +480,64 @@ ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
       geom_point(size = .3) +
       geom_smooth(method = "lm", color = "green") +
       facet_grid(lang_measure~pop_measure, scale = "free") +
-      #geom_text(aes(min_pop + .4*dif_pop, min_lang + .05*dif_lang, label=lab),
-      #        data = d.scatter.corrs, color = "red") +
     scale_fill_manual(name = "grp",values = c( "mediumblue", "grey99","red1")) +
     theme_bw() +
     xlab("Demographic variables") +
     ylab("Language variables") +
     theme(legend.position = "none") 
 
-ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
-      geom_point(size = .5) +
-      geom_smooth(method = "lm", color = "green") +
-      facet_grid(lang_measure~pop_measure, scale = "free") +
-    theme_bw() +
-    theme(legend.position = "none") 
-  
 ```
 
-Fits controlling for language family
+
+Fits controling for family -- controlling for family in a mixed effect model
+```{r, fig.width=10, fig.height = 14, eval = F}
+
+d.scatter.fam = d.clean %>% 
+  filter(pop_log>2) %>%
+  select(n.neighbors_log, mean.temp, sum.precip, sd.temp, growing.season, pop_log,
+         area_log, n.neighbors_log, sd.precip_log, ratio.L2.L1_log, distance.from.origin,
+         p.complexity.bias, scaled.LDT.TTR, mean.dependency.length, mean.length, mean.aoa,
+         n.consonants_log, n.phonemes_log, lang.family, lang.genus) %>%
+  gather(lang_measure, lang_value, 
+         which(is.element(names(.), lang_vars_crit))) %>%
+  group_by(lang_measure) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars_crit)))
+
+is.na(d.scatter.fam) <- sapply(d.scatter.fam, is.infinite) 
+d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value), !is.na(lang_value))
+
+# get model fits
+d.model.fits = d.scatter.fam %>%
+  group_by(lang_measure, pop_measure) %>%
+  do(tidy(lmer(lang_value ~ pop_value + (pop_value|lang.family) + (pop_vaue), data=.))) %>%
+  filter(term == "pop_value") %>%
+  mutate(sig = ifelse(abs(statistic) > 1.96, "*", "")) %>%
+  mutate(sig.col = ifelse(statistic > 1.96, "pos",
+                          ifelse(statistic < -1.96, "neg",
+                                 "none"))) %>%
+  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
+  ungroup
+
+ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
+        geom_rect(data = d.model.fits, aes(fill = sig.col), 
+                xmin = -Inf, xmax = Inf,
+                ymin = -Inf, ymax = Inf, alpha = 0.2) +
+      geom_point(size = .3, aes(col = lang.family)) +
+      geom_smooth(method = "lm", color = "green") +
+      facet_grid(lang_measure~pop_measure, scales = "free") +
+     scale_fill_manual(name = "grp", 
+                       values = c( "mediumblue", "grey99","red1")) +
+    theme_bw() +
+    xlab("Demographic variables") +
+    ylab("Language variables") +
+    theme(legend.position = "none")
+```
+
+
+Fits controlling for language family (mean.fam.lang ~ mean.fam.pop)
 Aggregating across families
-```{r, fig.width=10, fig.height = 14}
+```{r, fig.width=10, fig.height = 14, eval = F}
 d.scatter.fam = d %>% 
   select(log.n.consonants, log.n.vow, son, log.asjp.mean.length, 
          H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
@@ -496,14 +586,72 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
     theme(legend.position = "none") 
 ```
 
+
+Fits controling for family -- controling for family in a linear model
+(lm(lang ~ pop + lang.family))
+```{r, fig.width=10, fig.height = 14, eval = F}
+
+#summary(lmer(lang_value~pop_value+ (1|langFamily), d.scatter))$coefficients["pop_value", "t value"]
+
+d.scatter.fam2 = d %>% 
+  filter(log.pop2>2) %>%
+  select(log.n.consonants, log.n.vow, son,  log.asjp.mean.length,
+         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
+         log.RatioL2, log.pop2, growingSeason, mean.temp, 
+         log.sum.precip, log.area,langFamily) %>%
+  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
+         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
+         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
+  gather(lang_measure, lang_value, 
+         which(is.element(names(.), lang_vars))) %>%
+  group_by(lang_measure) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars)))
+
+is.na(d.scatter.fam2) <- sapply(d.scatter.fam2, is.infinite) 
+d.scatter.fam2 <- filter(d.scatter.fam2, !is.na(pop_value), !is.na(lang_value))
+
+# get correlations
+d.scatter.corrs = d.scatter.fam2 %>%
+  group_by(lang_measure, pop_measure) %>%
+  do(tidy(lm(lang_value ~ pop_value * langFamily, data = .))) %>%
+  filter(term == "pop_value") %>%
+
+   mutate(sig = ifelse(p.value < .05, "*", "")) %>%
+   mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
+                           ifelse(p.value < .05 & estimate < 0, "neg",
+                                  "none"))) %>%
+  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
+  ungroup
+
+ggplot(d.scatter.fam2, aes(x = pop_value, y = lang_value)) +
+        geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
+                xmin = -Inf, xmax = Inf,
+                ymin = -Inf, ymax = Inf, alpha = 0.2) +
+      geom_point(size = .3, aes(col = langFamily)) +
+      geom_smooth(method = "lm", color = "green") +
+      facet_grid(lang_measure~pop_measure, scales = "free") +
+     scale_fill_manual(name = "grp", 
+                       values = c( "mediumblue", "grey99","red1")) +
+    theme_bw() +
+    xlab("Demographic variables") +
+    ylab("Language variables") +
+    theme(legend.position = "none")
+```
+
+## PCA
 ```{r}
+```
+
+SHINY APP
+```{r, eval = F}
 lmeasure <- "lexical.diversity"
 pmeasure <- "log.RatioL2"
 subdata <- filter(d.scatter.fam2,
                   lang_measure == "lmeasure", pop_measure == "pmeasure")
 ```
 
-```{r}
+```{r, eval = F}
 shinyApp(
   
   ui = fluidPage(
@@ -539,64 +687,9 @@ shinyApp(
 ```
 
 
-Fits controling for family -- controlling for family in a linear model
-```{r, fig.width=10, fig.height = 14}
-
-#summary(lmer(lang_value~pop_value+ (1|langFamily), d.scatter))$coefficients["pop_value", "t value"]
-
-d.scatter.fam2 = d %>% 
-  filter(log.pop2>2) %>%
-  select(log.n.consonants, log.n.vow, son,  log.asjp.mean.length,
-         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
-         log.RatioL2, log.pop2, growingSeason, mean.temp, 
-         log.sum.precip, log.area,langFamily) %>%
-  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
-         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
-         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
-  gather(lang_measure, lang_value, 
-         which(is.element(names(.), lang_vars))) %>%
-  group_by(lang_measure) %>%
-  gather(pop_measure, pop_value,
-         which(is.element(names(.), demo_vars)))
-
-is.na(d.scatter.fam2) <- sapply(d.scatter.fam2, is.infinite) 
-d.scatter.fam2 <- filter(d.scatter.fam2, !is.na(pop_value), !is.na(lang_value))
-
-# get correlations
-d.scatter.corrs = d.scatter.fam2 %>%
-  group_by(lang_measure, pop_measure) %>%
-  #do(tidy(lm(lang_value ~ pop_value * langFamily, data = .))) %>%
-  do(tidy(lmer(lang_value ~ pop_value + (pop_value|langFamily), data=.))) %>%
-  filter(term == "pop_value") %>%
-  #do(summary(lmer(.$lang_value~.$pop_value+   #(1|.$langFamily)))$coefficients["pop_value", "t value"]) %>%
-  # mutate(sig = ifelse(p.value < .05, "*", "")) %>%
-    mutate(sig = ifelse(abs(statistic) > 1.96, "*", "")) %>%
-#   mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
-#                           ifelse(p.value < .05 & estimate < 0, "neg",
-#                                  "none"))) %>%
-  mutate(sig.col = ifelse(statistic > 1.96, "pos",
-                          ifelse(statistic < -1.96, "neg",
-                                 "none"))) %>%
-  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
-  ungroup
-
-ggplot(d.scatter.fam2, aes(x = pop_value, y = lang_value)) +
-        geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
-                xmin = -Inf, xmax = Inf,
-                ymin = -Inf, ymax = Inf, alpha = 0.2) +
-      geom_point(size = .3, aes(col = langFamily)) +
-      geom_smooth(method = "lm", color = "green") +
-      facet_grid(lang_measure~pop_measure, scales = "free") +
-     scale_fill_manual(name = "grp", 
-                       values = c( "mediumblue", "grey99","red1")) +
-    theme_bw() +
-    xlab("Demographic variables") +
-    ylab("Language variables") +
-    theme(legend.position = "none")
-```
 
 WALS features of complexity
-```{r}
+```{r, eval = F}
 # aggregate across countries to get quantitative measures by language
 most.frequent.level = function (x){
     mf = names(which.max(table(x)))
