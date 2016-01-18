@@ -1,0 +1,30 @@
+WALSNum,LDCat,Name
+20,morphological type,BICFUS
+26,morphological type,DRYPRE
+49,cases,IGGNUM
+28,cases,BAECSY
+98,cases,COMALN
+22,verb morphology,BICSYN
+100,verb morphology,SIEALI
+102,agreement,SIEVPA
+48,agreement,BAKADP
+29,agreement,BAEPSY
+74,possibility and evidentials,AUWSIT
+75,possibility and evidentials,AUWEPI
+76,possibility and evidentials,AUWSEM
+77,possibility and evidentials,HAAEVD
+112,"negation, plurality, interrogatives",DRYNEG
+34,"negation, plurality, interrogatives",HASNPL
+36,"negation, plurality, interrogatives",MORASP
+92,"negation, plurality, interrogatives",DRYPQP
+67,"tense, possession, aspect, mood",DAHFUT
+66,"tense, possession, aspect, mood",DAHPAS
+65,"tense, possession, aspect, mood",DAHPFV
+70,"tense, possession, aspect, mood",AUWIMP
+57,"tense, possession, aspect, mood",DRYPOS
+59,"tense, possession, aspect, mood",NICPOC
+73,"tense, possession, aspect, mood",DOBOPT
+38,"articles, demonstratives, pronouns",DRYIND
+39,"articles, demonstratives, pronouns",CYSIND
+41,"articles, demonstratives, pronouns",DIEDDD
+101,"articles, demonstratives, pronouns",DRYPRO

@@ -9,3 +9,7 @@ broom
 plyr
 Matrix
 lme4
+sp
+rworldmap
+factoextra
+maps
