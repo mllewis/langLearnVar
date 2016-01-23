@@ -4,14 +4,15 @@ author: "Molly Lewis"
 date: "`r Sys.Date()`"
 output: 
   html_document:
-  toc: true
-  number_sections: true
+    toc: true
+    number_sections: true
+    theme: cerulean
 ---
   
 ***
 ***
 
-```{r, echo = F, warning = F, message = F}
+```{r setup, echo = F, warning = F, message = F}
 rm(list = ls())
 library(knitr)
 library(ggplot2)
@@ -27,31 +28,6 @@ library(factoextra)
 
 opts_chunk$set(cache = F, warning = F, message = F)
 
-cor.mtest <- function(mat, conf.level = 0.95) {
-  mat <- as.matrix(mat)
-  n <- ncol(mat)
-  p.mat <- lowCI.mat <- uppCI.mat <- matrix(NA, n, n)
-  diag(p.mat) <- 0
-  diag(lowCI.mat) <- diag(uppCI.mat) <- 1
-  for (i in 1:(n - 1)) {
-    for (j in (i + 1):n) {
-      tmp <- cor.test(mat[, i], mat[, j], conf.level = conf.level)
-      p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
-      lowCI.mat[i, j] <- lowCI.mat[j, i] <- tmp$conf.int[1]
-      uppCI.mat[i, j] <- uppCI.mat[j, i] <- tmp$conf.int[2]
-      }
-    }
-  return(list(p.mat, lowCI.mat, uppCI.mat))
-}
-
-removeOutlier <- function(dataCol, num_deviations) {
-  boolean.outlier = abs(dataCol - mean(dataCol, na.rm = T)) > 
-                    num_deviations*sd(dataCol, na.rm = T)
-  df = bind_cols(as.data.frame(boolean.outlier), as.data.frame(dataCol))
-  cleaned.dataCol = ifelse(df$boolean.outlier, NA, df$dataCol)
-  cleaned.dataCol
-}
-
 mapTheme = theme(plot.background = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -62,13 +38,23 @@ mapTheme = theme(plot.background = element_blank(),
     axis.ticks = element_blank(),
     axis.text = element_blank())
 
+removeOutlier <- function(dataCol, num_deviations) {
+  boolean.outlier = abs(dataCol) > mean(dataCol, na.rm = T) +
+                    (num_deviations*sd(dataCol, na.rm = T))
+  df = bind_cols(as.data.frame(boolean.outlier), as.data.frame(dataCol))
+  cleaned.dataCol = ifelse(df$boolean.outlier, NA, df$dataCol)
+  cleaned.dataCol
+}
+
 most.frequent.level = function (x){
     mf = names(which.max(table(x)))
     return(mf)
 }
+
+N_EXCLUDE_SDS = 10
 ```
 
-## Read in datasets
+## Variable descriptions
  * Lupyan & Dale (2010): Demographic variables and syntactic complexity
     + log population size (pop_log)
     + area (area)
@@ -79,7 +65,7 @@ most.frequent.level = function (x){
     + variability in precipition (sd.precip)
     + growing season (growing.season)
     + latitude (lat)
-    + longitude (long)
+    + longitude (lon)
     + morpholigical complexity (morphological.complexity)
  * Bentz, et al. (2015): L2 learners and lexical diversity
     + number of first language speakers (n.L1.speakers)
@@ -119,8 +105,9 @@ most.frequent.level = function (x){
  * Luniewska, et al. (2015): Age of acquisition (aoa)
     + mean adult-judged age of acquistion (mean.aoa)
 
+## Read in datasets
 Language codes (from WALS) -- WALS, ISO, ascii-name. These are used to merge across datasets.
-```{r}
+```{r read in datasets}
 codes = read.csv("../data/language_codes.csv") %>%
   select(language, WALS, ISO) %>%
   mutate(ISO = unlist(lapply(strsplit(as.character(ISO),
@@ -159,18 +146,11 @@ fams = ld %>%
       select(ISO, lang.family, lang.genus, native.country,
              native.country.area, language)  
 
-# were getting country here from choosing the most frequent country for a language
-fams.country = ld %>%
-        group_by(ISO) %>%
-        summarise(country = most.frequent.level(country)) %>%
-        left_join(fams)
-
-ld.demo = left_join(fams.country, ld.demo, by = "ISO") %>%
-          ungroup()
+ld.demo = left_join(fams, ld.demo, by = "ISO") %>%ungroup()
 ```
 
 WALS features of complexity
-```{r, eval = T}
+```{r}
 # get variables to include 
 qual = ld %>%
   select(18:103, 124) %>%
@@ -189,6 +169,7 @@ qual = select(qual,which(is.element(names(qual), c("ISO", qualVarNames))))
 for (i in 1:length(qualVarNames)){
   thisVarLabs = ld_feature_names[ld_feature_names$WALS.feature.name == qualVarNames[i],]
   old = thisVarLabs$ld.level.label
+  if (is.na(old)) {print("NA!!!")}
   new = thisVarLabs$ld.complexity
   col_i = grep(qualVarNames[i], colnames(qual))
   qual[,col_i] = mapvalues(as.matrix(qual[,col_i]), 
@@ -203,6 +184,19 @@ ld.complexity = qual %>%
   summarise(morphological.complexity = sum(complexity.level))
 
 ld.demo.qual = left_join(ld.demo, ld.complexity)
+```
+
+WALS features of complexity - Lupyan and Dale data
+```{r}
+
+ld.c = read.table("../data/lupyan_2010_complexity.txt", fill = T, 
+               header = T, sep = "\t", na.strings = "*") %>%
+    mutate(lang = tolower(lang)) %>%
+    left_join(codes, c("lang" = "language")) %>%
+    rename(morphological.complexity.ld = complexity,
+           morphological.complexity.ld.centered = complexityCentered) %>%
+    select(morphological.complexity.ld, morphological.complexity.ld.centered, ISO)
+
 ```
 
 Bentz, et al. (2015): L2 learners and lexical diversity
@@ -228,7 +222,10 @@ bentz = read.csv("../data/bentz_2015.csv") %>%
     left_join(codes, by="ISO") %>%
     mutate(ISO = as.factor(ISO)) %>%
     select(-language, -WALS) 
-  
+
+# these were taken directly from ethnologue website by ML for missing languages that were high-frequency across the datasets
+ethno_sup = read.csv("../data/supplementary_enthnologue.csv")
+bentz = full_join(bentz, ethno_sup)
 ```
 
 Atkinson (2011)
@@ -257,7 +254,7 @@ cb = read.csv("../data/lewis_2015.csv") %>%
     select(-X.1, -X, -lower.ci, -upper.ci, -checked,
            -mean.length) %>%
     distinct(ISO) %>%
-   filter(language != "english") %>% # english is an outlier in this dataset because norms colelcted in english
+   filter(language != "english") %>% # english is an outlier in this dataset because norms were colelcted in english
   select(-language, -WALS)
 ```
 
@@ -268,7 +265,6 @@ dl = read.csv("../data/futrell_2015.csv") %>%
   select(-language, -WALS, -fixed.random.baseline.slope, 
          -observed.slope, -m_rand) %>%
   rename(mean.dependency.length = m_obs)
-
 ```
 
 Pellegrino, Coupe, & Marsico (2015): Information density
@@ -276,7 +272,6 @@ Pellegrino, Coupe, & Marsico (2015): Information density
 uid = read.csv("../data/pellegrino_2015.csv")  %>%
   left_join(codes, by="language") %>%
   select(-language, -WALS)
-
 ```
 
 Moran, McCloy, & Wright (2012): Phonemic inventory
@@ -331,14 +326,16 @@ aoa = aoa.raw %>%
     as.character(language_aoa),"_"), function(x) x[1])))) %>%
   select(-3:-27) %>%
   rename(language = language_aoa) %>%
-    left_join(codes, by="language") %>%
+  left_join(codes, by="language") %>%
+  mutate(language = as.factor(language)) %>%
   group_by(ISO) %>%
   summarize(mean.aoa = mean(aoa, na.rm = T))
 ```
 
 Merge data frames together by ISO
-```{r, eval = F}
+```{r merge data, eval = F}
 d = full_join(ld.demo.qual, cb, by = "ISO") %>%
+    full_join(ld.c, by = "ISO") %>%
     full_join(bentz, by = "ISO") %>%
     full_join(dl, by = "ISO") %>%
     full_join(uid, by = "ISO") %>%
@@ -349,6 +346,10 @@ d = full_join(ld.demo.qual, cb, by = "ISO") %>%
     distinct(ISO) %>%
     filter(!is.na(ISO), ISO !="") %>%
     mutate(ISO = as.factor(ISO))
+
+#d$pop_log= ifelse(is.na(d$pop_log), log(d$n.L1.speakers + d$n.L2.speakers), d$pop_log) # uses bentz values where missing from WALS
+#d$ratio.L2.L1= ifelse(is.na(d$ratio.L2.L1), d$n.L2.speakers/d$n.L1.speakers, d$ratio.L2.L1) 
+
 #write.csv(d, "../data/langLearnVar_data.csv")
 ```
 
@@ -357,16 +358,18 @@ load data
 d = read.csv("../data/langLearnVar_data.csv")[,-1]
 ```
 
+## Data cleaning
+
 Remove outliers and check for normality
-```{r, fig.width = 15, fig.height = 10}
+```{r clean data, fig.width = 15, fig.height = 10}
 d.clean = d %>%
-  mutate_each(funs(removeOutlier(.,3)), c(-ISO, -lang.family, 
+  mutate_each(funs(removeOutlier(.,N_EXCLUDE_SDS)), c(-ISO, -lang.family, 
               -native.country, -native.country.area, 
-         -lang.genus, -language, -stock, -region, -country))
+         -lang.genus, -language, -stock, -region))
 
 d.clean %>%
   select(-ISO, -lang.family, -native.country, -native.country.area, 
-         -lang.genus, -language, -stock, -region, -country) %>%
+         -lang.genus, -language, -stock, -region) %>%
   gather(var, value) %>%
   ggplot(aes(sample = value)) + 
   stat_qq(na.rm = T, size = .2) + 
@@ -393,7 +396,7 @@ d.clean = d.clean %>%
 
 d.clean %>%
   select(-ISO, -lang.family, -native.country, -native.country.area, 
-         -lang.genus, -language, -stock, -region, -country) %>%
+         -lang.genus, -language, -stock, -region) %>%
   gather(var, value) %>%
   ggplot(aes(sample = value)) + 
   stat_qq(na.rm = T, size = .2) + 
@@ -408,16 +411,16 @@ is.na(d.clean) <- sapply(d.clean, is.infinite)
 normality.test = d.clean %>%
   summarise_each(funs(unlist(tidy(shapiro.test(.))[2])),
                  c(-ISO, -lang.family, -native.country,
-                   -native.country.area, -country,
+                   -native.country.area,
                      -lang.genus, -language, -stock, -region)) %>%
   gather(variable, shapiro.p.value) %>%
   mutate(normal = ifelse(shapiro.p.value > .05, TRUE, FALSE)) %>%
   summary()
 ```
-By this test, only 14 variables normal. But, I think this is the best we can do (?). 
+By this test, only 11 variables normal. But, I think this is the best we can do (?). 
 
 Look at histograms of all variables. 
-```{r, fig.height = 10, fig.width = 10}
+```{r histograms, fig.height = 9, fig.width = 14}
 demo_vars = c("lat", "lon", "perimeter_log", "n.neighbors_log",
               "mean.temp", "sum.precip",
               "sd.temp", "growing.season", "pop_log", "area_log",
@@ -425,7 +428,7 @@ demo_vars = c("lat", "lon", "perimeter_log", "n.neighbors_log",
               "n.L1.speakers_log",
               "n.L2.speakers_log", "distance.from.origin")
 
-lang_vars = c(setdiff(names(d.clean), demo_vars))[-c(1:6, 16,17)]
+lang_vars = c(setdiff(names(d.clean), demo_vars))[-c(1:6, 22,23)]
 
 d.clean %>%
   gather(variable, num, lat:length(d.clean))  %>%
@@ -441,21 +444,6 @@ d.clean %>%
     theme_bw()
 ```
 
-Number of variables we have data for, for each language
-```{r, fig.height = 6, eval = F}
-# as is this plot is too hard to read to be useful
-d.clean %>%
-  gather(variable, num, c(7:21, 23:48))  %>%
-  group_by(language) %>%
-  summarize(counts = length(which(is.na(num) == F))) %>%
-  filter(!is.na(counts), counts > 10, !is.na(language)) %>%
-  ggplot(aes(y = counts, x = language)) + 
-    geom_bar(stat = "identity") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    ylab("Number of variables (minimum 10)") +
-    ggtitle("Number variables per language")
-```
 
 Number of languages we have data, for each variable
 ```{r, fig.height = 6}
@@ -479,10 +467,9 @@ d.clean %>%
 ```
 
 Look at number of languages intersecting each variable 
-```{r, fig.height = 10, fig.width = 10}
+```{r n_languages, fig.height = 10, fig.width = 10}
 arealControl_vars = c("stock", "region", "lang.family", "lang.genus",
-                       "native.country", "native.country.area",
-                      "country")
+                      "native.country", "native.country.area")
 
 d.clean %>%
   gather(lang_measure, lang_value, 
@@ -503,20 +490,13 @@ d.clean %>%
       theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
      
-## Relationships between variables
-```{r,  fig.height = 10, fig.width = 10, eval = F}
-Correlation matrix (stuff in the upper right quadrant matters)
-is.na(d) <- sapply(d, is.infinite)
-corrs = cor(d[,-c(1:3, 36)], use = "pairwise.complete.obs")
-corrplot(corrs)
-```
-
-Scatter plots
-
-
-
+## Relationship between language and demographic variables
 Fits controling for family -- controlling for family in a mixed effect model
-```{r, fig.width=8, fig.height = 14}
+```{r model fits with all variables (lmer), fig.width=10, fig.height = 12}
+
+# write.csv(d.clean,"../data/langLearnVar_data_clean.csv")
+# d.clean = read.csv("../data/langLearnVar_data_clean.csv")[-1]
+
 # these are the variables we care about for the paper
 demo_vars_crit = c("n.neighbors_log",
               "mean.temp", "sum.precip", "sd.temp",
@@ -525,17 +505,16 @@ demo_vars_crit = c("n.neighbors_log",
               "distance.from.origin")
 
 lang_vars_crit = c("p.complexity.bias","scaled.LDT.TTR",
-                   "mean.dependency.length",
-              "mean.length", "mean.aoa",
-              "n.consonants_log", "n.vowels_log", "morphological.complexity")
+                   "mean.dependency.length", "mean.length",
+                   "mean.aoa", "n.consonants_log", "n.vowels_log",
+                   "morphological.complexity", "morphological.complexity.ld")
 
 d.scatter.fam = d.clean %>% 
-  filter(pop_log>2) %>%
   select(ratio.L2.L1_log, pop_log, distance.from.origin,
          n.neighbors_log, area_log, mean.temp, sd.temp, sum.precip,
          sd.precip_log, n.consonants_log, n.vowels_log, mean.length,
-         p.complexity.bias, scaled.LDT.TTR, morphological.complexity,
-         mean.aoa, lang.family, country) %>%
+         p.complexity.bias, scaled.LDT.TTR, morphological.complexity, morphological.complexity.ld, 
+         mean.aoa, lang.family, native.country) %>%
   gather(lang_measure, lang_value, 
          which(is.element(names(.), lang_vars_crit))) %>%
   group_by(lang_measure) %>%
@@ -550,7 +529,7 @@ d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
 d.model.fits = d.scatter.fam %>%
   group_by(lang_measure, pop_measure) %>%
   do(tidy(lmer(lang_value ~ pop_value + (pop_value|lang.family) +
-                 (1|country), data=.))) %>%
+                 (1|native.country), data=.))) %>%
   filter(term == "pop_value") %>%
   mutate(sig = ifelse(abs(statistic) > 1.96, "*", "")) %>%
   mutate(sig.col = ifelse(statistic > 1.96, "pos",
@@ -558,6 +537,7 @@ d.model.fits = d.scatter.fam %>%
                                  "none"))) %>%
   mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
   ungroup
+
 d.model.fits[d.model.fits == "NaN"] = "NA"
 
 # plot
@@ -575,34 +555,47 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   theme(legend.position = "none")
 ```
 
-
-## PCA
+## Relationship between language and demographic variables, with PCA
+Look at correlations between PCA variables
 ```{r}
 # get demographic variables only (excluding L2 because intersections contains only 40 languages)
 d.demo =  d.clean %>%
   select(lat, mean.temp, sd.temp, sum.precip, sd.precip_log, 
-         area_log, pop_log, n.neighbors_log) %>%
+         area_log, pop_log, n.neighbors_log) %>% 
   mutate(lat = abs(lat))
+
 is.na(d.demo) <- sapply(d.demo, is.infinite) 
 
-# do pca
-pca = prcomp(na.omit(d.demo), scale = TRUE)
+demo.corr = cor(d.demo, use = "pairwise.complete")
+abs(demo.corr)>.8
 
-# look at eigen values
-barplot(pca$sdev/pca$sdev[1])
-fviz_eig(pca, addlabels=TRUE, 
+#exclude lat (correlated with mean.temp, sd.precip_log) [threshold: > .8]
+```
+
+```{r PCA with demographic variables}
+d.demo =  select(d.demo, lat)
+
+# do pca
+pca.demo = prcomp(na.omit(d.demo), scale = TRUE)
+barplot(pca.demo$sdev/pca.demo$sdev[1])
+pca.demo = prcomp(na.omit(d.demo), scale = TRUE, tol = .6)
+
+# look at variance explained
+fviz_eig(pca.demo, addlabels = TRUE, 
                linecolor ="red", geom = "line") +
   theme_bw()
 
 # plot loadings
-pcs <- cbind(names(d.demo),
-                    gather(as.data.frame(pca$rotation), 
+pcs.demo <- cbind(names(d.demo),
+                    gather(as.data.frame(pca.demo$rotation), 
                            pc, value))
-names(pcs)[1] = "variable"
+names(pcs.demo)[1] = "variable"
  
-pcs$variable =  factor(pcs$variable , levels = pcs$variable[1:8]) # order variables
-pcs$magnitude = ifelse(abs(pcs$value)>.2, TRUE, FALSE)
-ggplot(pcs) +
+pcs.demo$variable = factor(pcs.demo$variable, levels = pcs.demo$variable[1:8]) 
+
+# order variables
+pcs.demo$magnitude = ifelse(abs(pcs.demo$value)>.2, TRUE, FALSE)
+ggplot(pcs.demo) +
   geom_bar(aes(x = variable, y = value,
                fill = magnitude), stat="identity") +
   facet_wrap(~pc) +
@@ -616,55 +609,46 @@ ggplot(pcs) +
 d.demo[!is.na(d.demo)] = 0
 d.demo[is.na(d.demo)] = 1
 good_is = which(rowSums(d.demo) == 0)
-d.pca = d.clean[good_is,] %>%
-  cbind(pca$x)
+d.pca.demo = d.clean[good_is,] %>% cbind(pca.demo$x)
 
-names(d.pca)[names(d.pca) == "PC1"] = "wet_and_hot_climate"
-names(d.pca)[names(d.pca) == "PC2"] = "small"
-names(d.pca)[names(d.pca) == "PC3"] = "desert_climate"
+names(d.pca.demo)[names(d.pca.demo) == "PC1"] = "big_and_cold"
+names(d.pca.demo)[names(d.pca.demo) == "PC2"] = "big_and_hot"
 ```
 
 Principle components by language
-```{r, fig.height = 8, fig.width = 12}
-ggplot(d.pca) +   
-borders("world", colour="gray50", fill="gray50") +
-geom_point(aes(x = lon, y=lat, 
-               color = wet_and_hot_climate), size=3) +
+```{r principle components by language (maps), fig.height = 6, fig.width = 10}
+ggplot(d.pca.demo) +   
+  borders("world", colour="gray50", fill="gray50") +
+  geom_point(aes(x = lon, y=lat, 
+               color = big_and_cold), size=3) +
   scale_colour_gradient(high="green", low = "white") +
-ggtitle("Wet and hot (PC1)") + 
-mapTheme
+  ggtitle("Wet and hot (PC1)") + 
+  mapTheme
 
-ggplot(d.pca) +   
-borders("world", colour="gray50", fill="gray50") +
-geom_point(aes(x = lon, y=lat, 
-               color = small), size=3) +
+ggplot(d.pca.demo) +   
+  borders("world", colour="gray50", fill="gray50") +
+  geom_point(aes(x = lon, y=lat, 
+               color = big_and_hot), size=3) +
   scale_colour_gradient(high="blue", low = "white") +
-ggtitle("small (PC2)") + 
-mapTheme
-
-ggplot(d.pca) +   
-borders("world", colour="gray50", fill="gray50") +
-geom_point(aes(x = lon, y=lat, 
-               color = desert_climate), size=3) +
-  scale_colour_gradient(high="red", low = "white") +
-ggtitle("Desert climate (PC3)") + 
+  ggtitle("big (PC2)") + 
   mapTheme
 
 ```
 
 Model fits using PCA
-```{r, fig.width=10, fig.height = 14}
-demo_vars_crit2 = c("wet_and_hot_climate", "small", "desert_climate")
+```{r model fits with PCA for demo, fig.width=10, fig.height = 14}
+demo_vars_crit2 = c("big_and_cold", "big_and_hot")
 
-lang_vars_crit2 = c("morphological.complexity", "p.complexity.bias","scaled.LDT.TTR",
-              "mean.length", "mean.aoa",
-              "n.consonants_log", "n.vowels_log")
+lang_vars_crit2 = c("morphological.complexity",
+                    "p.complexity.bias","scaled.LDT.TTR",
+                    "mean.length", "mean.aoa",
+                    "n.consonants_log", "n.vowels_log")
 
-d.scatter.fam = d.pca %>% 
+d.scatter.fam = d.pca.demo %>% 
   select(n.consonants_log, n.vowels_log, 
-          mean.length, p.complexity.bias, scaled.LDT.TTR, morphological.complexity, mean.aoa,
-         lang.family, country, wet_and_hot_climate, small,
-         desert_climate) %>%
+         mean.length, p.complexity.bias, scaled.LDT.TTR,
+         morphological.complexity, mean.aoa,
+         lang.family, native.country, big_and_cold, big_and_hot) %>%
   gather(lang_measure, lang_value, 
          which(is.element(names(.), lang_vars_crit2))) %>%
   group_by(lang_measure) %>%
@@ -678,7 +662,8 @@ d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
 # get model fits
 d.model.fits = d.scatter.fam %>%
   group_by(lang_measure, pop_measure) %>%
-  do(tidy(lmer(lang_value ~ pop_value + (pop_value|lang.family) + (1|country), data=.))) %>%
+  do(tidy(lmer(lang_value ~ pop_value + (pop_value|lang.family) + (1|native.country),
+               data=.))) %>%
   filter(term == "pop_value") %>%
   mutate(sig.col = ifelse(statistic > 1.96, "pos",
                           ifelse(statistic < -1.96, "neg",
@@ -688,28 +673,185 @@ d.model.fits = d.scatter.fam %>%
 
 d.model.fits[d.model.fits == "NaN"] = "NA"
 ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
-        geom_rect(data = d.model.fits, aes(fill = sig.col), 
-                xmin = -Inf, xmax = Inf,
-                ymin = -Inf, ymax = Inf, alpha = 0.2) +
-      geom_point(size = .3) +
-      geom_smooth(method = "lm", color = "green") +
-      facet_grid(lang_measure~pop_measure, scales = "free") +
-     scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
-    theme_bw() +
-    xlab("Demographic variables") +
-    ylab("Language variables") +
-    theme(legend.position = "none")
+  geom_rect(data = d.model.fits, aes(fill = sig.col), 
+        xmin = -Inf, xmax = Inf,
+        ymin = -Inf, ymax = Inf, alpha = 0.2) +
+  geom_point(size = .3) +
+  geom_smooth(method = "lm", color = "green") +
+  facet_grid(lang_measure~pop_measure, scales = "free") +
+  scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
+  theme_bw() +
+  xlab("Demographic variables") +
+  ylab("Language variables") +
+  theme(legend.position = "none")
 ```
 
-## replicate Lupyan and Dale (2010) complexity score plot (Fig. 3)
+## Relationship between PC on language variables
+Look at correlations between PCA variables
 ```{r}
+d.lang =  d.clean %>%
+  select(morphological.complexity.ld, scaled.LDT.H, 
+         mean.length, n.consonants_log, n.vowels_log) 
+is.na(d.lang) <- sapply(d.lang, is.infinite) 
+
+lang.corr = cor(d.lang, use = "pairwise.complete")
+abs(lang.corr)>.8
+
+# include all
+```
+
+
+```{r PCA with languages variables}
+# do pca
+pca.lang = prcomp(na.omit(d.lang), scale = TRUE)
+barplot(pca.lang$sdev/pca.lang$sdev[1])
+
+# look at variance explained
+fviz_eig(pca.lang, addlabels = TRUE, 
+               linecolor ="red", geom = "line") +
+  theme_bw()
+pca.lang = prcomp(na.omit(d.lang), scale = TRUE, tol = .7)
+
+
+# plot loadings
+pcs.lang <- cbind(names(d.lang),
+                    gather(as.data.frame(pca.lang$rotation), 
+                           pc, value))
+names(pcs.lang)[1] = "variable"
+ 
+pcs.lang$variable =  factor(pcs.lang$variable , levels = pcs.lang$variable[1:8]) # order variables
+pcs.lang$magnitude = ifelse(abs(pcs.lang$value)>.2, TRUE, FALSE)
+ggplot(pcs.lang) +
+  geom_bar(aes(x = variable, y = value,
+               fill = magnitude), stat = "identity") +
+  facet_wrap(~pc) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  + 
+       scale_fill_manual(name = "Magnitude", 
+                       values = c("grey","red1")) +
+  ggtitle("PCA loadings")
+
+# merge PCAs with full dataset for model fits
+d.lang[!is.na(d.lang)] = 0
+d.lang[is.na(d.lang)] = 1
+good_is = which(rowSums(d.lang) == 0)
+d.pca.lang = d.clean[good_is,] %>% cbind(pca.lang$x)
+
+names(d.pca.lang)[names(d.pca.lang) == "PC1"] = "PC1_L"
+names(d.pca.lang)[names(d.pca.lang) == "PC2"] = "PC2_L"
+```
+
+Model fits using PCA - all demographic to predict lang principle components
+```{r PCA with language variables (lmer), fig.width=10, fig.height = 8}
+lang_vars_crit2 = c("PC1_L", "PC2_L")
+
+demo_vars_crit2 = c("n.neighbors_log",
+              "mean.temp", "sum.precip", "sd.temp",
+              "pop_log", "area_log", "n.neighbors_log",
+              "sd.precip_log", "ratio.L2.L1_log",
+              "distance.from.origin", "mean.aoa")
+
+d.scatter.fam = d.pca.lang %>% 
+  select(ratio.L2.L1_log, pop_log, distance.from.origin,
+         n.neighbors_log, area_log, mean.temp, sd.temp, sum.precip, mean.aoa, PC1_L, PC2_L, lang.family, native.country) %>%
+  gather(lang_measure, lang_value, 
+         which(is.element(names(.), lang_vars_crit2))) %>%
+  group_by(lang_measure) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars_crit2)))
+
+is.na(d.scatter.fam) <- sapply(d.scatter.fam, is.infinite) 
+d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
+                        !is.na(lang_value))
+
+# get model fits
+d.model.fits = d.scatter.fam %>%
+  group_by(lang_measure, pop_measure) %>%
+  do(tidy(lmer(lang_value ~ pop_value + (1|native.country), data=.))) %>%
+  filter(term == "pop_value") %>%
+  mutate(sig.col = ifelse(statistic > 1.96, "pos",
+                          ifelse(statistic < -1.96, "neg",
+                                 "none"))) %>%
+  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
+  ungroup
+
+d.model.fits[d.model.fits == "NaN"] = "NA"
+ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
+  geom_rect(data = d.model.fits, aes(fill = sig.col), 
+          xmin = -Inf, xmax = Inf,
+          ymin = -Inf, ymax = Inf, alpha = 0.2) +
+  geom_point(size = .3) +
+  geom_smooth(method = "lm", color = "green") +
+  facet_grid(lang_measure~pop_measure, scales = "free") +
+  scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
+  theme_bw() +
+  xlab("Demographic variables") +
+  ylab("Language variables") +
+  theme(legend.position = "none")
+```
+
+
+All PCAs
+```{r, fig.width=10, fig.height = 6}
+all.pca = left_join(d.pca.demo, d.pca.lang[,c("PC1_L", "PC2_L", "ISO")],
+                    by = "ISO")
+
+demo_vars_crit2 = c("big_and_cold", "big_and_hot")
+lang_vars_crit2 = c("PC1_L", "PC2_L")
+
+d.scatter.fam = all.pca %>% 
+  select(PC1_L, PC2_L, big_and_cold, big_and_hot, 
+         lang.family, native.country, ISO) %>%
+  gather(lang_measure, lang_value, 
+         which(is.element(names(.), lang_vars_crit2))) %>%
+  group_by(lang_measure) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars_crit2)))
+
+is.na(d.scatter.fam) <- sapply(d.scatter.fam, is.infinite) 
+d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
+                        !is.na(lang_value))
+
+# get model fits
+d.model.fits = d.scatter.fam %>%
+  group_by(lang_measure, pop_measure) %>%
+  do(tidy(lmer(lang_value ~ pop_value + (pop_value|lang.family) +
+                 (1|native.country), data=.))) %>%
+  filter(term == "pop_value") %>%
+  mutate(sig.col = ifelse(statistic > 1.96, "pos",
+                          ifelse(statistic < -1.96, "neg",
+                                 "none"))) %>%
+  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
+  ungroup
+
+as.data.frame(d.model.fits)
+
+d.model.fits[d.model.fits == "NaN"] = "NA"
+ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
+  geom_rect(data = d.model.fits, aes(fill = sig.col),
+          xmin = -Inf, xmax = Inf,
+          ymin = -Inf, ymax = Inf, alpha = 0.2) +
+  geom_point(size = .3) +
+  geom_smooth(method = "lm", color = "green") +
+  facet_grid(lang_measure~pop_measure, scales = "free") +
+  scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
+  theme_bw() +
+  xlab("Demographic variables") +
+  ylab("Language variables") +
+  theme(legend.position = "none")
+```
+
+## Replicate Lupyan and Dale (2010) complexity score plot (Fig. 3)
+```{r Lupyan and Dale complexity plot}
 ld.demo.qual %>%
-  mutate(morphological.complexity.factor = as.factor(abs(morphological.complexity))) %>%
+  mutate(morphological.complexity.factor =
+           as.factor(morphological.complexity)) %>%
   group_by(morphological.complexity.factor) %>%
   multi_boot(column="pop_log",
               summary_groups = c("morphological.complexity.factor"),
               statistics_functions = c("mean", "ci_lower","ci_upper")) %>%
-  mutate(morphological.complexity = as.numeric(as.character(morphological.complexity.factor))) %>%
+  mutate(morphological.complexity =  
+           as.numeric(as.character(morphological.complexity.factor))) %>%
   ggplot() +
   geom_pointrange(aes(x= morphological.complexity.factor,
                       y = mean, ymin = ci_lower, ymax = ci_upper)) + 
@@ -722,222 +864,69 @@ ld.demo.qual %>%
   
 ```
 
+## Relationship between language variables for AOA
+```{r AOA and language variables, eval = F}
+# predicted relationship with AOA  with TTR and number of consonants
 
-SHINY APP
-```{r, eval = F}
-lmeasure <- "lexical.diversity"
-pmeasure <- "log.RatioL2"
-subdata <- filter(d.scatter.fam2,
-                  lang_measure == "lmeasure", pop_measure == "pmeasure")
-```
+tidy(lmer(mean.aoa ~ morphological.complexity + (morphological.complexity|lang.family) + (1|native.country), d.clean))[2, "statistic"]
+cor.test(d.clean$mean.aoa, d.clean$morphological.complexity)
 
-```{r, eval = F}
-shinyApp(
-  
-  ui = fluidPage(
-    selectInput("lmeasure", "Language Measure:", 
-                choices = as.character(unique(d.scatter.fam2$lang_measure)),
-                selected = "lexical.diversity"),
-    selectInput("pmeasure", "Population Measure:", 
-                choices = as.character(unique(d.scatter.fam2$pop_measure)),
-                selected = "log.RatioL2"),
-    plotOutput("scatterPlot"), 
-    verbatimTextOutput("lmer")
-  ),
-  
-  server = function(input, output) {
-    output$scatterPlot <- renderPlot({
-      qplot(pop_value, lang_value, 
-            data = filter(d.scatter.fam2, lang_measure == input$lmeasure & 
-                     pop_measure == input$pmeasure)) + 
-        geom_smooth(method="lm") + 
-        theme_bw()
-    })
-    
-    output$lmer <- textOutput({
-      summary(lmer(lang_value ~ pop_value + (pop_value | langFamily), 
-                   data = filter(d.scatter.fam2, 
-                                 lang_measure == input$lmeasure & 
-                                   pop_measure == input$pmeasure)))
-    })
-  },
-  
-  options = list(height = 500)
-)
-```
+tidy(lmer(mean.aoa ~ p.complexity.bias + (p.complexity.bias|lang.family) + (1|native.country), d.clean))[2, "statistic"]
+cor.test(d.clean$mean.aoa, d.clean$p.complexity.bias)
 
+# **
+tidy(lmer(mean.aoa ~ scaled.LDT.TTR + (scaled.LDT.TTR|lang.family) + (1|native.country), d.clean))[2, "statistic"]
+cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.TTR)
+cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.H)
+cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.ZM)
 
+tidy(lmer(mean.aoa ~ mean.dependency.length + (mean.dependency.length|lang.family) + (1|native.country), d.clean))[2, "statistic"]
+cor.test(d.clean$mean.aoa, d.clean$mean.dependency.length)
 
+tidy(lmer(mean.aoa ~ mean.length + (mean.length|lang.family) + (1|native.country), d.clean)) [2, "statistic"]
+cor.test(d.clean$mean.aoa, d.clean$mean.length)
 
+# **
+tidy(lmer(mean.aoa ~ n.consonants_log + (n.consonants_log|lang.family) + (1|native.country) , d.clean))[2, "statistic"]
+tidy(lmer(mean.aoa ~ normalized.consonant.diversity  + (1|native.country) , d.clean)) [2, "statistic"]
 
+tidy(lmer(mean.aoa ~ n.phonemes_log + (n.phonemes_log|lang.family) + (1|native.country) , d.clean))[2, "statistic"]
 
-## Parallels between language ontogeny and evolution
-get measures of developmental change in vocabulary
+tidy(lmer(mean.aoa ~ n.vowels_log + (n.vowels_log|lang.family) + (1|native.country) , d.clean))[2, "statistic"]
 
-## Learnability pressures predicts AOA across languages
-Predict AOA by social variables, by social variable
-```{r, fig.width=10, fig.height = 10, eval = F}
-aoa_central = aoa_data %>% 
-  mutate(language = tolower(language)) %>%
-  group_by(language, measure, lexical_category) %>%
-  summarise(mean_aoa = mean(aoa))
-  
-d3 = inner_join(d, aoa_central, by = "language") %>%
-  select(language, log.RatioL2, log.pop2,
-         log.numNeighbors, log.area, 
-         mean.temp, mean_aoa, measure, lexical_category) %>%
-  mutate(language = as.factor(language)) %>%
-  gather(pop_measure, pop_value, 2:6) 
+tidy(lmer(mean.aoa ~ syllable.rate  + (1|native.country) , d.clean))[2, "statistic"]
 
-ggplot(d3, aes(y = mean_aoa, 
-              x = pop_value,
-              label = language,
-              group = measure,
-              color = measure)) +
-  geom_text(size = 3, aes(group = measure)) +
-  facet_grid(lexical_category ~ pop_measure, scales = "free") +
-  geom_smooth(method = "lm") +
-  theme_bw() 
-````
+tidy(lmer(mean.aoa ~ information.density  + (1|native.country) , d.clean))[2, "statistic"]
 
-Fits controlling for language family (mean.fam.lang ~ mean.fam.pop)
-Aggregating across families
-```{r, fig.width=10, fig.height = 14, eval = F}
-d.scatter.fam = d %>% 
-  select(log.n.consonants, log.n.vow, son, log.asjp.mean.length, 
-         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
-         log.RatioL2, log.pop2, growingSeason, mean.temp, 
-         log.sum.precip, log.area, langFamily) %>%
-  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
-         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
-         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
-  group_by(langFamily) %>% 
-  summarise_each(funs(mean(., na.rm = TRUE))) %>%
-  gather(lang_measure, lang_value, 
-         which(is.element(names(.), lang_vars))) %>%
-  group_by(lang_measure) %>%
-  gather(pop_measure, pop_value,
-         which(is.element(names(.), demo_vars)))
+tidy(lmer(mean.aoa ~ information.rate  + (1|native.country) , d.clean)) [2, "statistic"]
 
-is.na(d.scatter.fam) <- sapply(d.scatter.fam, is.infinite)
+ggplot(d.clean, aes(mean.length, mean.aoa, label = ISO)) +
+  geom_point() +
+  geom_label() +
+  geom_smooth(method = "lm")
 
-# get correlations
-d.scatter.corrs = d.scatter.fam %>%
-  group_by(lang_measure, pop_measure) %>%
-  do(tidy(cor.test(~ .$pop_value + .$lang_value))) %>%
-  mutate(sig = ifelse(p.value < .05, "*", "")) %>%
-  mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
-                          ifelse(p.value < .05 & estimate < 0, "neg",
-                                 "none"))) %>%
-  mutate(lab = paste("r = ", round(estimate,2),sig, sep = "")) %>%
-  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
-  full_join(text.pos) %>%
-  ungroup
+ggplot(d.clean, aes(scaled.LDT.TTR, mean.aoa, label = ISO)) +
+  geom_point() +
+  geom_label() +
+  geom_smooth(method = "lm")
 
-ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
-        geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
-                xmin = -Inf, xmax = Inf,
-                ymin = -Inf, ymax = Inf, alpha = 0.2) +
-      geom_point(size = .3) +
-      geom_smooth(method = "lm", color = "green") +
-      facet_grid(lang_measure~pop_measure, scale = "free") +
-    scale_fill_manual(name = "grp", 
-                      values = c( "mediumblue", "grey99","red1")) +
-    theme_bw() +
-    xlab("Demographic variables") +
-    ylab("Language variables") +
-    theme(legend.position = "none") 
-```
+ggplot(d.clean, aes(n.consonants_log, mean.aoa, label = ISO)) +
+  geom_point() +
+  geom_label() +
+  geom_smooth(method = "lm")
 
-Fits controling for family -- controling for family in a linear model
-(lm(lang ~ pop + lang.family))
-```{r, fig.width=10, fig.height = 14, eval = F}
-d.scatter.fam2 = d %>% 
-  filter(log.pop2>2) %>%
-  select(log.n.consonants, log.n.vow, son,  log.asjp.mean.length,
-         H.LDT, lun.mean.aoa, p.complexity.bias, m_obs, 
-         log.RatioL2, log.pop2, growingSeason, mean.temp, 
-         log.sum.precip, log.area,langFamily) %>%
-  rename(log.length = log.asjp.mean.length, lexical.diversity = H.LDT, 
-         aoa = lun.mean.aoa, complexity.bias = p.complexity.bias,
-         dependency.length = m_obs, log.n.vowels = log.n.vow) %>%
-  gather(lang_measure, lang_value, 
-         which(is.element(names(.), lang_vars))) %>%
-  group_by(lang_measure) %>%
-  gather(pop_measure, pop_value,
-         which(is.element(names(.), demo_vars)))
+ggplot(d.clean, aes(n.phonemes_log, mean.aoa, label = ISO)) +
+  geom_point() +
+  geom_label() +
+  geom_smooth(method = "lm")
 
-is.na(d.scatter.fam2) <- sapply(d.scatter.fam2, is.infinite) 
-d.scatter.fam2 <- filter(d.scatter.fam2, !is.na(pop_value), !is.na(lang_value))
+ggplot(d.clean, aes(n.vowels_log, mean.aoa, label = ISO)) +
+  geom_point() +
+  geom_label() +
+  geom_smooth(method = "lm")
 
-# get correlations
-d.scatter.corrs = d.scatter.fam2 %>%
-  group_by(lang_measure, pop_measure) %>%
-  do(tidy(lm(lang_value ~ pop_value * langFamily, data = .))) %>%
-  filter(term == "pop_value") %>%
-  mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
-                           ifelse(p.value < .05 & estimate < 0, "neg",
-                                  "none"))) %>%
-  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
-  ungroup
-
-ggplot(d.scatter.fam2, aes(x = pop_value, y = lang_value)) +
-        geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
-                xmin = -Inf, xmax = Inf,
-                ymin = -Inf, ymax = Inf, alpha = 0.2) +
-      geom_point(size = .3, aes(col = langFamily)) +
-      geom_smooth(method = "lm", color = "green") +
-      facet_grid(lang_measure~pop_measure, scales = "free") +
-     scale_fill_manual(name = "grp", 
-                       values = c( "mediumblue", "grey99","red1")) +
-    theme_bw() +
-    xlab("Demographic variables") +
-    ylab("Language variables") +
-    theme(legend.position = "none")
-```
-
-```{r, fig.width=10, fig.height = 14}
-# these are the variables we care about for the paper
-demo_vars_crit = c("n.neighbors_log",
-              "mean.temp", "sum.precip", "sd.temp",
-              "pop_log", "area_log", "n.neighbors_log",
-              "sd.precip_log", "ratio.L2.L1_log",
-              "distance.from.origin")
-
-lang_vars_crit = c("p.complexity.bias","scaled.LDT.TTR",
-                   "mean.dependency.length",
-              "mean.length", "mean.aoa",
-              "n.consonants_log", "n.vowels_log", "morphological.complexity")
-
-d.scatter = d.clean %>% 
-  gather(lang_measure, lang_value, 
-         which(is.element(names(.), lang_vars_crit))) %>%
-  group_by(lang_measure) %>%
-  gather(pop_measure, pop_value,
-         which(is.element(names(.), demo_vars_crit))) %>%
-  select(pop_measure, lang_measure, pop_value, lang_value)
-is.na(d.scatter) <- sapply(d.scatter, is.infinite)
-
-# get correlations
-d.scatter.corrs = d.scatter %>%
-  group_by(lang_measure, pop_measure) %>%
-  do(tidy(cor.test(~ .$pop_value + .$lang_value))) %>%
-  mutate(sig.col = ifelse(p.value < .05 & estimate > 0, "pos",
-                          ifelse(p.value < .05 & estimate < 0, "neg",
-                                 "none"))) %>%
-  mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
-  ungroup
-
-ggplot(d.scatter, aes(x = pop_value, y = lang_value)) +
-    geom_rect(data = d.scatter.corrs, aes(fill = sig.col), 
-            xmin = -Inf, xmax = Inf,
-            ymin = -Inf, ymax = Inf, alpha = 0.2) +
-    geom_point(size = .3) +
-    geom_smooth(method = "lm", color = "green") +
-    facet_grid(lang_measure~pop_measure, scale = "free") +
-    scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
-    theme_bw() +
-    xlab("Demographic variables") +
-    ylab("Language variables") +
-    theme(legend.position = "none") 
+ggplot(d.clean, aes(mean.dependency.length , mean.aoa, label = ISO)) +
+  geom_point() +
+  geom_label() +
+  geom_smooth(method = "lm")
 ```
