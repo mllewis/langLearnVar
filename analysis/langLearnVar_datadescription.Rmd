@@ -1,0 +1,289 @@
+---
+title: Language learnability variability - loading datasets
+author: "Molly Lewis"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    number_sections: true
+    theme: cerulean
+---
+  
+
+## Read in datasets
+Language codes (from WALS) -- WALS, ISO, ascii-name. These are used to merge across datasets. [2027]
+```{r read in datasets}
+codes = read.csv("../data/language_codes.csv") %>%
+  select(language, WALS, ISO) %>%
+  mutate(ISO = unlist(lapply(strsplit(as.character(ISO),
+                                      ","),function(x) x[1])))
+# in cases where there are two ISO codes, takes first
+```
+
+#Lupyan & Dale (2010): Demographic variables and syntactic compelxity
+[2269] - maybe ISO to language names from another data set (lots of languages not in codes)
+```{r}
+wichmann_ISOS = read.csv("../data/ISO_mappings_from_wichmann.csv", 
+                         stringsAsFactors=F)[-1] %>%
+  unique() 
+
+ld = read.table("../data/lupyan_2010.txt", fill = T, 
+                header = T, sep = "\t", na.strings = "*") %>%
+  left_join(codes, c("walsCode" = "WALS")) %>%
+  mutate(lang = tolower(lang)) %>%
+  left_join(wichmann_ISOS, by = "lang") %>% # use wichmann ISOS for some missing
+  mutate(ISO = as.factor(ifelse(is.na(ISO.x), ISO.y, ISO.x))) %>%
+  select(-ISO.y, -ISO.x) %>%
+  filter(!is.na(ISO)) %>%
+  filter(ISO != "")
+
+# rename columns
+ld = rename(ld, pop_log = logpop2, 
+         mean.temp = aveTemp,
+         n.neighbors = numNeighbors,
+         sum.precip = sumPrecip,
+         sd.temp = sdTemp,
+         sd.precip = sdPrecip,
+         lang.family = langFamily,
+         lang.genus = langGenus,
+         native.country = nativeCountry,
+         native.country.area = nativeCountryArea,
+         growing.season = growingSeason) 
+
+# get means across language
+ld.demo = ld %>%
+  group_by(ISO) %>%
+  summarise_each(funs(mean(., na.rm = TRUE)), 
+                 c(8:9, 16:121))  %>%
+  select(1:3, 93:95, 100:101, 103:105, 108)
+
+# add in data family
+fams = ld %>%
+  group_by(ISO) %>%
+  filter(row_number() == 1) %>%
+  select(ISO, lang.family, lang.genus, native.country,
+         native.country.area, language)  
+
+ld.demo = left_join(fams, ld.demo, by = "ISO") %>% ungroup()
+```
+
+WALS features of complexity
+```{r}
+# get variables to include 
+qual = ld %>%
+  select(18:103, 124) %>%
+  mutate_each(funs(as.factor)) %>%
+  group_by(ISO) %>%
+  summarise_each(funs(most.frequent.level)) %>%
+  mutate_each(funs(as.factor)) 
+
+ld_feature_names = read.csv("../data/lupyan_2010_all_feature_mappings.csv") 
+qualVarNames = intersect(names(qual), ld_feature_names$WALS.feature.name)
+qual = select(qual,which(is.element(names(qual), c("ISO", qualVarNames))))
+
+# remap factor levels to complexity values (0,1)
+# note two variables that are reported in the paper (NICPOC[59] and CYSIND[39] are missing in the data)
+
+for (i in 1:length(qualVarNames)){
+  thisVarLabs = ld_feature_names[ld_feature_names$WALS.feature.name == qualVarNames[i],]
+  old = thisVarLabs$ld.level.label
+  if (is.na(old)) {print("NA!!!")}
+  new = thisVarLabs$ld.complexity
+  col_i = grep(qualVarNames[i], colnames(qual))
+  qual[,col_i] = mapvalues(as.matrix(qual[,col_i]), 
+                           from = as.character(old),
+                           to = as.character(new), warn_missing = TRUE)
+}
+
+# [1716]
+ld.complexity = qual %>%
+  mutate_each(funs(as.numeric), -ISO) %>%
+  gather(variable, complexity.level, 2:28) %>%
+  group_by(ISO) %>%
+  summarise(morphological.complexity = sum(complexity.level))
+
+ld.demo.qual = left_join(ld.demo, ld.complexity)
+```
+
+WALS features of complexity - Lupyan and Dale data [1477,but only 864 with ISOs, lang names of missing ones don't match other ld data set e.g. "zaporo", I think these are the ones with no data?]
+There are 24 variables used total (not clear what those are)
+variables with missing data included, which means a count reflects a zero for missing data -- can't use this
+```{r, eval = F}
+
+ld.c = read.table("../data/lupyan_2010_complexity.txt", fill = T, 
+                  header = T, sep = "\t", na.strings = "*") %>%
+  mutate(lang = tolower(lang)) %>%
+  filter(missing == 0) %>%
+  left_join(codes, c("lang" = "language")) %>%
+  rename(morphological.complexity.ld = complexity,
+         morphological.complexity.ld.centered = complexityCentered) %>%
+  select(morphological.complexity.ld, morphological.complexity.ld.centered, ISO, lang)
+
+m = ld.c %>%
+  mutate(missing = as.factor(missing)) %>%
+  group_by(missing) %>%
+  summarize(complexity = mean(complexity))
+```
+
+Bentz, et al. (2015): L2 learners and lexical diversity
+Note here that we are only looking at languages from the UDHR corpus. The other corpora have smaller languages only.
+```{r, eval = F}
+bentz = read.csv("../data/bentz_2015.csv") %>%
+  gather(temp, LDT, starts_with("LDT")) %>% 
+  unite(temp1, measure, temp, sep = ".") %>% 
+  spread(temp1, LDT) %>%
+  filter(text == "UDHR") %>%
+  select(iso_639_3, RatioL2, a.LDTscaled, 
+         H.LDTscaled, TTR.LDTscaled, Stock,
+         Region, L1_speakers, L2_speakers) %>%
+  rename(ISO = iso_639_3,
+         n.L1.speakers = L1_speakers,
+         n.L2.speakers = L2_speakers,
+         ratio.L2.L1 = RatioL2,
+         stock = Stock,
+         region = Region,
+         scaled.LDT.TTR = TTR.LDTscaled,
+         scaled.LDT.ZM = a.LDTscaled,
+         scaled.LDT.H = H.LDTscaled) %>%
+  distinct(ISO)
+
+# n_speakers taken directly from ethnologue website by ML for missing languages that were high-frequency across the datasets
+ethno_sup = read.csv("../data/supplementary_enthnologue.csv")
+bentz = full_join(bentz, ethno_sup) %>%
+        mutate(ISO = as.factor(ISO)
+```
+
+Atkinson (2011)
+```{r, eval = F}
+atkinson = read.csv("../data/atkinson_2011.csv") %>%
+  select(normalized.vowel.diversity,
+         normalized.consonant.diversity,	
+         normalized.tone.diversity,
+         normalized.phoneme.diversity, ISO, 
+         distance.from.origin) %>%
+  mutate(ISO = as.factor(unlist(lapply(strsplit(as.character(ISO),
+                                      " "),function(x) x[1]))))
+```
+
+Lewis & Frank (under review): Complexity Bias
+```{r, eval = F}
+# complexity bias
+cb = read.csv("../data/lewis_2015.csv") %>%
+  rename(complexity.bias = corr,
+         p.complexity.bias = p.corr,
+         mono.complexity.bias = mono.cor,
+         open.complexity.bias = open.cor) %>%
+  left_join(codes, by="language") %>%
+  select(-X.1, -X, -lower.ci, -upper.ci, -checked,
+         -mean.length) %>%
+  distinct(ISO) %>%
+  filter(language != "english") %>% # english is an outlier in this dataset because norms were colelcted in english
+  select(-language, -WALS)
+```
+
+Futrell, Mahowald, & Gibson (2015): Dependency length
+```{r, eval = F}
+dl = read.csv("../data/futrell_2015.csv") %>%
+  left_join(codes, by="language") %>%
+  select(-language, -WALS, -fixed.random.baseline.slope, 
+         -observed.slope, -m_rand) %>%
+  rename(mean.dependency.length = m_obs)
+```
+
+Pellegrino, Coupe, & Marsico (2015): Information density
+```{r, eval = F}
+uid = read.csv("../data/pellegrino_2015.csv")  %>%
+  left_join(codes, by="language") %>%
+  select(-language, -WALS)
+```
+
+Moran, McCloy, & Wright (2012): Phonemic inventory
+```{r, eval = F}
+phoneme = read.csv("../data/moran_2012.csv") %>%
+  select(ISO, pho, con, vow, son, 
+         obs, mon, qua, ton) %>%
+  rename(n.phonemes = pho,
+         n.consonants = con,
+         n.vowels = vow,
+         n.sonorants = son,
+         n.obstruents = obs,
+         n.monophthongs = mon,
+         n.qual.monophthongs = qua,
+         n.tones = ton)
+```
+
+Wichmann, et al. (2013): Mean word length
+```{r, eval = F}
+# note is this IPA? - fix this!
+# [308 low frequency language have no ISO, leaving 4421 (TOTAL:4729)]
+ml.raw = read.csv("../data/wichmann_2013.csv") %>% 
+  select(1,1:109) %>%
+  gather(word,translation,I:name) %>%
+  mutate(nchar = unlist(
+    lapply(
+      lapply(
+        strsplit(
+          gsub("[[:space:]]", "", translation) ,
+          ","), 
+        nchar), mean))) %>%
+  filter(translation != "")
+
+# subset to only those words in the swadesh list (n = 40)
+swadesh.words  = ml[ml$ISO == "gwj", "word"] 
+ml.raw = ml.raw %>%
+  filter(is.element(word, swadesh.words))
+
+ml = ml.raw %>%
+  group_by(ISO) %>%
+  summarize(mean.length = mean(nchar, na.rm = T)) 
+
+#more_ISOs = ml.raw %>%
+#  select(ISO, names) %>%
+#  mutate(names = tolower(names))
+
+```
+
+Luniewska, et al. (2015): Age of acquistion (Aoa)
+```{r, eval = F}
+aoa.raw = read.csv("../data/luniewska_2015.csv", 
+                   header = T, fileEncoding = "latin1")
+
+aoa = aoa.raw %>%
+  gather(language_aoa, aoa, grep("aoa", 
+                                 names(aoa.raw))) %>%
+  mutate(language_aoa = tolower(unlist(lapply(strsplit(
+    as.character(language_aoa),"_"), function(x) x[1])))) %>%
+  select(-3:-27) %>%
+  rename(language = language_aoa) %>%
+  left_join(codes, by="language") %>%
+  mutate(language = as.factor(language)) %>%
+  group_by(ISO) %>%
+  summarize(mean.aoa = mean(aoa, na.rm = T)) %>%
+  filter(!is.na(ISO))
+```
+
+Merge data frames together by ISO
+```{r merge data, eval = F}
+d = full_join(ld.demo.qual, cb, by = "ISO") %>%
+  #full_join(ld.c, by = "ISO") %>%
+  full_join(bentz, by = "ISO") %>%
+  #full_join(dl, by = "ISO") %>%
+  #full_join(uid, by = "ISO") %>%
+  full_join(phoneme, by = "ISO") %>%
+  full_join(ml, by = "ISO") %>%
+  full_join(aoa, by = "ISO") %>%
+  full_join(atkinson, by = "ISO") %>%
+  distinct(ISO) %>%
+  filter(!is.na(ISO), ISO !="") %>%
+  mutate(ISO = as.factor(ISO))
+
+#d$pop_log= ifelse(is.na(d$pop_log), log(d$n.L1.speakers + d$n.L2.speakers), d$pop_log) # uses bentz values where missing from WALS
+#d$ratio.L2.L1= ifelse(is.na(d$ratio.L2.L1), d$n.L2.speakers/d$n.L1.speakers, d$ratio.L2.L1) 
+
+```
+
+load data
+```{r}
+# write.csv(d, "../data/langLearnVar_data.csv")
+d = read.csv("../data/langLearnVar_data.csv")[,-1]
+```

@@ -338,11 +338,8 @@ zul,zipf_stats_zul-x-bible-zulu-v1.txt,zulu,Benue-Congo ,Benue-Congo,S Africa,S 
 kng,zipf_stats_kng-x-bible-koongo-v1.txt,koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,1.088908789,-0.088908789,0.713333628,a,PBC,Bantoid,Niger-Congo
 kng,zipf_stats_kng-x-bible-koongo-v1.txt,koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,9.172465337,9.172465337,1.007690371,H,PBC,Bantoid,Niger-Congo
 kng,zipf_stats_kng-x-bible-koongo-v1.txt,koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,0.140663868,0.140663868,0.518273395,TTR,PBC,Bantoid,Niger-Congo
-kng,udhr_kng_AO.csv,Koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,0.868237061,0.131762939,0.201962767,a,UDHR,Bantoid,Niger-Congo
 kng,udhr_kng.csv,Koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,0.868237061,0.131762939,0.201962767,a,UDHR,Bantoid,Niger-Congo
-kng,udhr_kng_AO.csv,Koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,7.807326049,7.807326049,-0.09647287,H,UDHR,Bantoid,Niger-Congo
 kng,udhr_kng.csv,Koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,7.807326049,7.807326049,-0.09647287,H,UDHR,Bantoid,Niger-Congo
-kng,udhr_kng_AO.csv,Koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,0.361556064,0.361556064,-0.065926104,TTR,UDHR,Bantoid,Niger-Congo
 kng,udhr_kng.csv,Koongo,Benue-Congo,Benue-Congo,S Africa,S Africa,3000000,5000000,1.666666667,0.625,0.361556064,0.361556064,-0.065926104,TTR,UDHR,Bantoid,Niger-Congo
 afr,zipf_stats_afr-x-bible-afrnlv-v1.txt,afrnlv,Indo-European,Indo-European,S Africa,S Africa,5467475,10300000,1.883867782,0.653243465,1.279045556,-0.279045556,0.012061599,a,PBC,Germanic,Indo-European
 afr,zipf_stats_afr-x-bible-afrnlv-v1.txt,afrnlv,Indo-European,Indo-European,S Africa,S Africa,5467475,10300000,1.883867782,0.653243465,8.250675968,8.250675968,0.224765228,H,PBC,Germanic,Indo-European
