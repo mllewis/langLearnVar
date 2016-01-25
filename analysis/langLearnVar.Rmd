@@ -209,7 +209,7 @@ bentz = read.csv("../data/bentz_2015.csv") %>%
   filter(text == "UDHR") %>%
   select(iso_639_3, RatioL2, a.LDTscaled, 
          H.LDTscaled, TTR.LDTscaled, Stock,
-         Region, L1_speakers, L2_speakers) %>%
+         Region, L1_speakers, L2_speakers, TTR.LDT) %>%
   rename(ISO = iso_639_3,
          n.L1.speakers = L1_speakers,
          n.L2.speakers = L2_speakers,
@@ -504,18 +504,19 @@ demo_vars_crit = c("n.neighbors_log",
               "pop_log", "area_log", "n.neighbors_log",
               "sd.precip_log", "ratio.L2.L1_log")
 
-lang_vars_crit = c("p.complexity.bias","scaled.LDT.TTR",
+lang_vars_crit = c("p.complexity.bias","TTR.LDT",
                    "mean.dependency.length", "mean.length",
-                   "mean.aoa", "n.consonants_log", "n.vowels_log",
+                   "n.consonants_log", "n.vowels_log",
                    "morphological.complexity")
 
 d.scatter.fam = d.clean %>% 
   select(ratio.L2.L1_log, pop_log,
          n.neighbors_log, area_log, mean.temp, sd.temp, sum.precip,
          sd.precip_log, n.consonants_log, n.vowels_log, mean.length,
-         p.complexity.bias, scaled.LDT.TTR, morphological.complexity, 
-         mean.aoa, lang.family, native.country) %>%
-  gather(lang_measure, lang_value, 
+         p.complexity.bias, TTR.LDT, morphological.complexity,
+         lang.family, native.country) %>%
+  #mutate_each(funs(as.numeric(scale(.))), c(-15,-16)) %>% #scaling doesn't change anything
+  gather(lang_measure, lang_value,
          which(is.element(names(.), lang_vars_crit))) %>%
   group_by(lang_measure) %>%
   gather(pop_measure, pop_value,
@@ -532,10 +533,10 @@ d.model.fits = d.scatter.fam %>%
                  (1|native.country), data=.))) 
 
 line.fits = d.model.fits %>%
-          filter(term == "pop_value" | term == "(Intercept)") %>%
-  select(-std.error, -statistic, -group) %>%
-  spread(term, estimate) %>%
-  rename(s = pop_value)
+        filter(term == "pop_value" | term == "(Intercept)") %>%
+        select(-std.error, -statistic, -group) %>%
+        spread(term, estimate) %>%
+        rename(s = pop_value)
 names(line.fits)[3] = "i"
 
 sigs = d.model.fits %>%
@@ -649,13 +650,13 @@ Model fits using PCA
 demo_vars_crit2 = c("hot", "big")
 
 lang_vars_crit2 = c("morphological.complexity",
-                    "p.complexity.bias","scaled.LDT.TTR",
+                    "p.complexity.bias","LDT.TTR",
                     "mean.length", "mean.aoa",
-                    "n.consonants_log", "n.vowels_log")
+                    "n.consonants_log", "n.vowels_log", complexity.bias)
 
 d.scatter.fam = d.pca.demo %>% 
   select(n.consonants_log, n.vowels_log, 
-         mean.length, p.complexity.bias, scaled.LDT.TTR,
+         mean.length, p.complexity.bias, TTR.LDT,
          morphological.complexity,
          lang.family, native.country, big, hot) %>%
   gather(lang_measure, lang_value, 
@@ -701,7 +702,6 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   xlab("Demographic variables") +
   ylab("Language variables") +
   theme(legend.position = "none")
-
 ```
 
 ## Relationship between PC on language variables
@@ -910,8 +910,8 @@ cor.test(d.clean$mean.aoa, d.clean$morphological.complexity)
 tidy(lmer(mean.aoa ~ p.complexity.bias + (p.complexity.bias|lang.family) + (1|native.country), d.clean))[2, "statistic"]
 cor.test(d.clean$mean.aoa, d.clean$p.complexity.bias)
 
-# TTR **
-tidy(lmer(mean.aoa ~ scaled.LDT.TTR + (scaled.LDT.TTR|lang.family) + (1|native.country), d.clean))[2, "statistic"]
+# TTR 
+tidy(lmer(mean.aoa ~ TTR.LDT+ (TTR.LDT|lang.family) + (1|native.country), d.clean))[2, "statistic"]
 cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.TTR)
 cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.H)
 cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.ZM)

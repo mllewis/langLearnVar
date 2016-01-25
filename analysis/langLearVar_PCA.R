@@ -7,7 +7,7 @@ demo_vars_crit = c("n.neighbors_log",
                    "mean.temp", "sum.precip", "sd.temp",
                    "pop_log", "area_log", "n.neighbors_log",
                    "sd.precip_log", "ratio.L2.L1_log",
-                   "distance.from.origin")
+                   "distance.from.origin", "growing.season")
 
 lang_vars_crit = c("p.complexity.bias","scaled.LDT.TTR",
                    "mean.dependency.length", "mean.length",
@@ -18,13 +18,13 @@ lang_vars_crit = c("p.complexity.bias","scaled.LDT.TTR",
 # get demographic variables only (excluding L2 because intersections contains only 40 languages)
 d.demo = d.clean %>%
   select(lat, mean.temp, sd.temp, sum.precip, sd.precip_log, 
-         area_log, pop_log, n.neighbors_log) %>% 
+         area_log, pop_log, n.neighbors_log, growing.season) %>% 
   mutate(lat = abs(lat))
 is.na(d.demo) <- sapply(d.demo, is.infinite) 
 
 # figure out what variables to exclude, based on correlation matrix
 demo.corr = cor(d.demo, use = "pairwise.complete")
-abs(demo.corr)>.7
+abs(demo.corr)>.75
 #exclude lat (correlated with mean.temp, sd.precip_log) [threshold: > .8]
 d.demo = select(d.demo, -lat, -sd.precip_log)
 pca.demo = prcomp(na.omit(d.demo), scale = TRUE, tol = .6)
