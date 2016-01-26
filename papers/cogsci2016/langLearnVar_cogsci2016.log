@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.7.16)  25 JAN 2016 11:38
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.7.16)  25 JAN 2016 18:52
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -114,7 +114,11 @@ Package: array 2014/10/28 v2.4c Tabular extension package (FMi)
 (/usr/local/texlive/2015/texmf-dist/tex/latex/multirow/multirow.sty
 \bigstrutjot=\dimen107
 )
-(./langLearnVar_cogsci2016.aux)
+(./langLearnVar_cogsci2016.aux
+
+LaTeX Warning: Label `fig:cbias' multiply defined.
+
+)
 \openout1 = `langLearnVar_cogsci2016.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 21.
@@ -126,8 +130,7 @@ LaTeX Font Info:    ... okay on input line 21.
 LaTeX Font Info:    Checking defaults for OMS/pzccm/m/n on input line 21.
 LaTeX Font Info:    Try loading font information for OMS+pzccm on input line 21
 .
-
-(/usr/local/texlive/2015/texmf-dist/tex/latex/psnfss/omspzccm.fd
+ (/usr/local/texlive/2015/texmf-dist/tex/latex/psnfss/omspzccm.fd
 File: omspzccm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/pzccm.
 )
 LaTeX Font Info:    ... okay on input line 21.
@@ -235,80 +238,94 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 28.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 34.
- [1{/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
+
+<figs/plot1.pdf, id=1, 1300.86pt x 1011.78pt>
+File: figs/plot1.pdf Graphic file (type pdf)
+ <use figs/plot1.pdf>
+Package pdftex.def Info: figs/plot1.pdf used on input line 51.
+(pdftex.def)             Requested size: 520.3348pt x 404.70483pt.
+
+Overfull \hbox (14.4448pt too wide) in paragraph at lines 51--52
+ [] 
+ []
+
+[1{/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
 
 ]
+<figs/plot2.pdf, id=11, 1300.86pt x 867.24pt>
+File: figs/plot2.pdf Graphic file (type pdf)
+ <use figs/plot2.pdf>
+Package pdftex.def Info: figs/plot2.pdf used on input line 73.
+(pdftex.def)             Requested size: 455.30783pt x 303.53854pt.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 62.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 82.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 62.
-LaTeX Font Info:    Try loading font information for OMS+pcr on input line 75.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 82.
+ [2 <./figs/plot1.pdf>]
+LaTeX Font Info:    Try loading font information for OMS+pcr on input line 103.
 
-(/usr/local/texlive/2015/texmf-dist/tex/latex/psnfss/omspcr.fd
+ (/usr/local/texlive/2015/texmf-dist/tex/latex/psnfss/omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <9> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 75.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 103.
 
-Underfull \hbox (badness 10000) in paragraph at lines 75--75
+Underfull \hbox (badness 10000) in paragraph at lines 103--103
 [][]\OT1/ptm/m/n/9 The model spec-i-fi-ca-tion was as fol-lows:
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 75--75
+Underfull \hbox (badness 10000) in paragraph at lines 103--103
 \OT1/pcr/m/n/9 language.variable $\OMS/pzccm/m/n/9 ^^X$ \OT1/pcr/m/n/9 environm
 ental.variable +
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 75--75
+Underfull \hbox (badness 10000) in paragraph at lines 103--103
 \OT1/pcr/m/n/9 (environmental.variable \OMS/cmsy/m/n/9 j \OT1/pcr/m/n/9 languag
 e.family) +
  []
 
-[2]
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [3 <./figs/plot2.pdf>]
 
 LaTeX Warning: Citation `wichmann2008languagephonological' undefined on input l
-ine 107.
+ine 143.
 
-
-! LaTeX Error: File `figs/' not found.
-
-See the LaTeX manual or LaTeX Companion for explanation.
-Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.128 \includegraphics[width = 1\linewidth]{figs/}
-                                                  
-? 
-(./langLearnVar_cogsci2016.bbl [3]) [4
-
-] (./langLearnVar_cogsci2016.aux)
+(./langLearnVar_cogsci2016.bbl [4]) [5] (./langLearnVar_cogsci2016.aux)
 
 LaTeX Warning: There were undefined references.
 
+
+LaTeX Warning: There were multiply-defined labels.
+
  ) 
 Here is how much of TeX's memory you used:
- 2418 strings out of 493093
- 34707 string characters out of 6134989
- 102083 words of memory out of 5000000
- 5844 multiletter control sequences out of 15000+600000
- 38847 words of font info for 79 fonts, out of 8000000 for 9000
+ 2416 strings out of 493093
+ 34813 string characters out of 6134989
+ 101156 words of memory out of 5000000
+ 5852 multiletter control sequences out of 15000+600000
+ 39703 words of font info for 80 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 37i,9n,23p,1205b,236s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 37i,9n,23p,1196b,250s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2015/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
-exlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/te
-xlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texl
-ive/2015/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2015
-/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2015/texmf-dis
-t/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2015/texmf-dist/fonts/ty
-pe1/urw/times/utmri8a.pfb>
-Output written on langLearnVar_cogsci2016.pdf (4 pages, 87965 bytes).
+exlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/te
+xlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texl
+ive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texli
+ve/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive
+/2015/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2015/te
+xmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2015/texmf-dist/fo
+nts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/
+urw/times/utmr8a.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/urw/times/
+utmri8a.pfb>
+Output written on langLearnVar_cogsci2016.pdf (5 pages, 276173 bytes).
 PDF statistics:
- 42 PDF objects out of 1000 (max. 8388607)
- 29 compressed objects within 1 object stream
+ 77 PDF objects out of 1000 (max. 8388607)
+ 56 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 11 words of extra memory for PDF output out of 10000 (max. 10000000)
 
