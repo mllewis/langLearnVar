@@ -8,13 +8,15 @@
 \usepackage{apacite2}
 \usepackage{graphicx}
 \usepackage{array,multirow}
+ \usepackage{booktabs}
+ \usepackage[table,xcdraw]{xcolor}
 
 
 
 \newcommand*\rot{\rotatebox{90}}
 \newcommand{\squeezeup}{\vspace{-1.5mm}}
 
-\title{Learnability pressures on language across multiple timescales}
+\title{Language pressures across multiple timescales}
 \author{{\large \bf Molly Lewis} \\ \texttt{mll@stanford.edu}\\ Department of Psychology \\ Stanford University \\ 
 \And {\large \bf Michael C. Frank} \\ \texttt{mcfrank@stanford.edu} \\ Department of Psychology \\ Stanford University \\ }
 
@@ -32,11 +34,58 @@ Linguistic Niche Hypothesis; language evolution
 
 %%%%% INTRODUCTION %%%%%%
 \section{Introduction}
-Many facts about the social world are explicable only by considering the broader context: Why do gloves have five fingers? Why do tropical countries use lots of spices? The answers to these questions rely on taking into account properties of individual humans (hands have five fingers), and properties of the broader environmental context  \cite<tropical countries are hot, and spices kill bacteria;>{sherman1999darwinian}. A growing body of work has begun to also explain {\it language structure} by  taking into account these same contextual factors. This work argues that language systems are the product of cognitive constraints internal to the language learner \cite{chater2010language}, as well as properties of the environmental context \cite{nettle2012social} . 
+Why does language vary? Psychologists have made significant progress understanding linguistic variability in the domains of communicative interaction and children's developmental trajectories. In both cases, accounts rely on positing two pressures on the cognitive system---one internal and one external. In the case of communication, theorists argue that a speaker is influenced by cognitive constraints (minimize effort) and by the needs of the communicative partner \cite<get your message across;>{horn1984}. In the case of acquisition, there are internal maturational constraints [cite], as well as external pressures from the quality and quantity of linguistic input \cite{hart1995meaningful}. In the present paper, we explore the possibility that the same two pressures---system internal and external---may also account for variability in {\it language systems}. 
 
-In this paper, we explore this second proposal---that properties of the environmental context shape language systems. This hypothesis, which has been termed the  {\it Linguistic Niche Hypothesis} \cite{lupyan2010language,wray2007consequences}, suggests that language systems adapt to the pressures in the environment where a language is spoken. These pressures may come from a range of sources, including the climate, the length of the growing season, or the demographic characteristics of the people who learn and speak the language. 
 
-An important aspect of this hypothesis is the scale over which these pressures operate \cite{blythe2015hierarchy}. There are at least two scales at which language can be studied: individual utterances, which change over the course of moments in a communicative interaction, and language systems, which change over  the timescale of years.  An established body of work supports the claim  thats speakers adapt to the context at the scale of individual utterances, both in terms of the properties of the listener and the physical environment \cite<e.g.,>{schober1993spatial,frank2012predicting}. The present hypothesis explores the more controversial claim that environmental pressures shape language at the scale of language systems. %2x2 figure?
+
+Central to this hypothesis is the notion of a timescale: there are different units of time over which processes operate, and processes at shorter timescales influence those at longer timescales \cite[Fig.\ 1]{blythe2015hierarchy}. At the shortest timescale  are  individual utterances in communicative interactions (pragmatics). At a longer timescale is language acquisition.  Both experimental and modeling work suggest that communicative interactions at the pragmatic timescale influence processes like word learning at the acquisition timescale \cite<e.g.,>{baldwin1991infants,mcmurray2012,frank2009a,frank2014inferring}.
+%Critically, at both of these timescales, both internal and external pressures are thought to influence language (Fig. 1). 
+\begin{figure}[b!]
+\begin{center}
+\includegraphics[scale = .35]{figs/timescales_table.png}
+\end{center}
+\vspace{-.5em}
+\caption{Pressures on language internal and external to the cognitive system, at three different timescales. Brackets show examples of phenomena that result from a particular pressure at a particular timescale. The Linguistic Niche Hypothesis suggests that language evolution is influenced by the internal and external pressures in the particular environmental context in which a language is spoken.}
+\label{fig:timescales}
+\vspace{-1em}
+\end{figure}
+
+
+A third relevant timescale is language evolution: the timescale over which entire language systems change.   As for acquisition, there is evidence that language systems may be the product of processes at the pragmatic timescale. For example, languages universally structure semantic space to reflect optimal equilibria between communicative pressures  \cite<e.g.,>{kemp2012kinship,regier2007color,baddeley2009}.
+
+%language evolution timescale, the goal is to explain variability at the level of language systems (Modern English vs.\ Old English; English vs.\ Thai).
+
+However, the presence of communicative pressures at the pragmatic timescale is unable to explain cross-linguistic variability in linguistic structure. That is, why does Polish have rich morphology but English relatively sparse? A growing body of work argues that this variability may be due to cognitive constraints internal to the language learner \cite{chater2010language} as well as properties of the environmental context \cite{nettle2012social}. This hypothesis, which has been termed the  {\it Linguistic Niche Hypothesis} \cite{lupyan2010language,wray2007consequences}, suggests that language systems adapt to the internal and external pressures of  the linguistic environment. %These pressures may come from external pressures, such as contact with other languages, as well as constraints by learners themselves. 
+
+%from a range of sources, including the climate, the length of the growing season, or the demographic characteristics of the people who learn and speak the language. 
+
+
+%An important aspect of this hypothesis is the timescale over which these pressures operate \cite{blythe2015hierarchy}. The central notion of a timescale is that there are different units of time over which different process operate, and that processes at shorter timescales influence those at longer timescale. For example, the language acquisition timescale operates over many years, but there is evidence that word learning is the product of communicative interactions at the pragmatic timescale (e.g., Baldwin, 1991; 1993; Frank, Goodman, \& Tenenbaum, 2009; Frank \& Goodman, 2014). There is also evidence that language systems may be the product of processes at the pragmatic timescale based on the observation that semantic spaces reflect optimal equilibria between pragmatic pressures. .
+
+%An important aspect of this hypothesis is the timescale over which these pressures operate \cite{blythe2015hierarchy}. The central notion of a timescale is that there are different units of time over which different process operate, and that processes at shorter timescales influence those at longer timescale. For example, the language acquisition timescale operates over many years, but there is evidence that word learning is the product of communicative interactions at the pragmatic timescale (e.g., Baldwin, 1991; 1993; Frank, Goodman, \& Tenenbaum, 2009; Frank \& Goodman, 2014). There is also evidence that language systems may be the product of processes at the pragmatic timescale based on the observation that semantic spaces reflect optimal equilibria between pragmatic pressures. .
+
+
+
+
+%But, why might languages differ from each other? That is, why might English Why Fig.1 
+
+%(Regier, Kemp, & Kay, 2014; Kemp & Regier, 2012; Baddeley & Attewell, 2009) and aspects of the lexicon as a whole are also equilibria between these two pressures (Mahowald, Fedorenko, Piantadosi & Gibson, 2012; Lewis & Frank, 2014).
+
+ %There are at least two scales at which language can be studied: individual utterances, which change over the course of moments in a communicative interaction, and language systems, which change over  the timescale of years.  An established body of work supports the claim  thats speakers adapt to the context at the scale of individual utterances, both in terms of the properties of the listener and the physical environment \cite<e.g.,>{schober1993spatial,frank2012predicting}. The present hypothesis explores the more controversial claim that environmental pressures shape language at the scale of language systems. %2x2 figure?
+
+    
+
+%This question can be considered at multiple timescales---the timescale of a single communicative interaction (pragmatics), a child's developmental trajectory (acquisition), or language evolution. At the timescale of pragmatics, theorists have suggested two pressures, one from the speaker (don't exert too much energy) and one from the communicative partner (get your message across).  Similarly, at the scale of acquisition, there are broadly two pressures: maturational constraints and input. In the present work, we explore the possibility that the same two pressures---one internal and one external to the cognitive system---shape language at the language evolution timescale. 
+
+%Many facts about the social world are explicable only by considering the broader context: Why do gloves have five fingers? Why do tropical countries use lots of spices? The answers to these questions rely on taking into account properties of individual humans (hands have five fingers), and properties of the broader environmental context  \cite<tropical countries are hot, and spices kill bacteria;>{sherman1999darwinian}. 
+
+%A growing body of work has begun to also explain {\it language structure} by  taking into account these same contextual factors.  systems. 
+
+
+
+
+
+
 
 There are a number of pieces of evidence that environmental factors may indeed shape language systems.  At the lowest level of the linguistic hierarchy, languages with larger populations are claimed to have larger phonemic inventories \cite{atkinson2011phonemic,hay2007phoneme}, but  shorter words \cite{wichmann2011phonological}. Speakers with more second language learners have also been suggested to have fewer lexical items \cite{bentz2015adaptive}. At the level of morphology, evidence suggests that speakers with larger populations tend to have simpler morphology \cite{lupyan2010language, bentz2013languages}. Finally, there is also evidence that population size may influence the mappings between form and meaning. In particular, this work suggests that languages tend to map longer words to more complex meanings \cite{lewisstructure2014}, but that this bias is smaller for languages with larger populations  \cite{lewis_evolang}.
 
@@ -56,13 +105,11 @@ Testing these mechanisms is empirically challenging, however. Because there are 
 \vspace{-1em}
 \end{figure*}
 
-In this work, we try to address these challenges by clarifying the empirical landscape. We do this by aggregating across datasets that find covariation between environmental variables and linguistic structure. This serves two purposes. First, it allows us to examine the relationship between the same set of environmental predictors across a range of linguistic features. And, second, it allows for the same analytical techniques and areal controls to be used across datasets. By addressing these inconsistencies, we are in a better position to more directly compare relationships between environmental and linguistic features. Importantly, a more coherent picture of the empirical landscape may provide insight into the mechanism linking language systems to their environments.
+In this work, we try to address these challenges by clarifying the empirical landscape. We do this by aggregating across datasets that find covariation between environmental variables and linguistic structure. This serves two purposes. First, it allows us to examine the relationship between the same set of environmental predictors across a range of linguistic features. And, second, it allows for the same analytical techniques and areal controls to be used across datasets. By addressing these inconsistencies, we are better able to  directly compare relationships between environmental and linguistic features. Importantly, a more coherent picture of the empirical landscape may provide insight into the mechanism linking language systems to their environments.
 
 We also more directly address the question of mechanism by examining variability in the mean age of acquisition of words for L1 learners across languages. Evidence that this variability is related to an aspect of the linguistic system (such as number of phonemes) would suggest that L1 learners, and not L2 learners, are the relevant environmental factor shaping that aspect of the linguistic system. 
 
 In what follows, we first present a set of analyses examining the relationship between environmental and linguistic features using the same analytical techniques.  We then examine the relationship between mean age of acquisition in a language and aspects of the linguistic system.
-
-
 
 %%%% Demo and language features%%%%%%
 \section{Environmental pressures on language systems}
@@ -73,7 +120,7 @@ The hypothesis of interest suggests a relationship between environmental and lin
 \includegraphics[scale = .35]{figs/plot2.pdf}
 \end{center}
 \vspace{-.5em}
-\caption{Languages in small, cold regions tend to be less complex. The barplots show the loadings on the first two principle components for the environmental variables ($n$ = 7; orange) and language variables ($n$ = 5; green). The scatter plots show the relationship between the first two principle components for both sets of variables. Each point corresponds to a language, and lines show the linear fit from the mixed effect model. Significance and direction of a linear relationship are indicated by the coloring on the scatterplot (red: positive; blue: negative).  [THESE NEEDS A KEY, maybe manually in the upper corner?] }
+\caption{Languages spoken in small, cold regions tend to be more complex. The barplots show the loadings on the first two principle components for the environmental variables ($n$ = 7; orange) and language variables ($n$ = 5; green). The scatter plots show the relationship between the first two principle components for both sets of variables. Each point corresponds to a language, and lines show the linear fit from the mixed effect model. Significance and direction of a linear relationship are indicated by the coloring on the scatterplot (red: significant  and positive; blue: significant and negative).}
 \label{fig:cbias}
 \vspace{-1em}
 \end{figure*}
@@ -85,18 +132,11 @@ The hypothesis of interest suggests a relationship between environmental and lin
 
 {\it Moran, McCloy and Wright (2012).} Estimates of number of consonants and vowels in each language were used from this dataset. These were originally taken from the Phoible database \cite{phoible}. [$n$ = 969]
 
-
 {\it Lewis and Frank (2014).} This work finds that languages tend to map more complex meanings (measured via semantic norms) to longer words. The bias is estimated as the correlation (Pearson's $r$) between word length (in terms of number of characters) and complexity ratings for a set of 499 words translated via Google Translate. We used estimates of the correlation that partialed out the effect of spoken frequency [$n$ = 79]
 
 {\it Wichmann, Rama, and Holman (2014).} This database contains translations for 40-lexical items across many languages. Word length was calculated as the mean number of characters ASJPcode transcription system across words in each language. [$n$ = 4421]
 
 Aggregating across datasets, we analyzed 8 environmental variables in total: L2-L1 population ratio, total population size, number of neighbors, area of spoken region, mean and standard deviation temperature, and mean and standard deviation precipitation. We analyzed 6 total linguistic variables: number of vowels, number of consonants, word length, type-token ratio, complexity bias, and morphological complexity.
-
-
-
-
-
-
 
 
 \subsection{Method}
@@ -106,30 +146,32 @@ We test for a linear relationship between each environmental and language variab
 In our first analysis, we fit mixed effects models predicting language variables with environmental factors using areal controls. In Analysis 2, we reduce the dimensionality of our data using principle component analysis, and then fit the same models as in Analysis 1.
 
 {\it Analysis 1: Relationship between environmental pressures and language systems with areal controls.}
-We  log-transformed five of our variables to better approximate a normal distribution (population, L2 to L1 ratio,  number of neighbors, area, number of consonants, number of vowels). We then fit mixed effect models predicting each language variable with each environmental variable. We considered a relationship significant if the test statistic on the fixed effect coefficient exceeded 1.96. Fig. 1 summarizes the results.
-[Discussion of findings]
+We  log-transformed five of our variables to better approximate a normal distribution (population, L2 to L1 ratio,  number of neighbors, area, number of consonants, number of vowels) \footnote{All code and data for the paper are available at \url{http://github.com/mllewis/langLearnVar}}. We then fit mixed effect models predicting each language variable with each environmental variable. We considered a relationship significant if the test statistic on the fixed effect coefficient exceeded 1.96. Fig. 1 summarizes the results.
+[Discussion of findings]. Data can be explored interactively through an online app: [here].
 
 {\it Analysis 2: Principle component analysis.} 
-Analysis 1 provides a uniform analysis of the many environmental and linguistic variables that have been used to test the Linguistic Niche Hypothesis. However,  the number of variables considered makes it difficult to distill a coherent picture from these data. Given that many of these variables  are partially correlated with each other, we used a technique for reducing the dimensionality of the dataset---principle component analysis. We found the principle components associated with the variance for the environmental variables and the linguistic variables, and then examined the relationship between the rotated component variables.
+Analysis 1 provides a uniform analysis of the many environmental and linguistic variables that have been used to test the Linguistic Niche Hypothesis. However,  the number of variables considered makes it difficult to distill a coherent picture from these data. Given that many of these variables  are partially correlated with each other, we used a technique for reducing the dimensionality of the dataset---principle component analysis. We found the principle components associated with the variance for the environmental variables and the linguistic variables (actually a subset), and then examined the relationship between the primary principle components.
 
 All variables were first scaled. For the environmental variables, the first two principle components accounted for  .69 of the total variance (PC1: .39; PC2: .30).  The weights on these variables across the two components can be seen in the upper panel of Fig. 2. The first component  weights most heavily on variables related to the climate. It can be thought of as corresponding to hot and wet regions. The second component weights most heavily on variables related to the size of the region a language is spoken in, both in terms of number of speakers and physical size. This principle component can be roughly interpreted as the `smallness' of a linguistic community.
 
 For the linguistic variables, the first two components also accounted for most of the variance, .70 (PC1: .39; PC2: .31; right panel of Fig.\ 2). The first component weights positively on all variables, except number of vowels. In particular, this component is associated with more consonants, longer words, more word types, and greater morphosyntactic complexity. Broadly, this component is related to the amount of cognitive difficulty associated with learning a language. The second component is associated with having short words, but large phonemic inventories. 
 
-We then fit the same model as in Analysis 1,  using the rotated values for the first two principle components for the environmental and linguistic variables. The plots in Fig.\ 2, show the relationship between the principle components. Both environmental principle components were reliable predictors of the first linguistic principle component (PC1: $\beta=-0.56$; PC2: $\beta=0.47$). This suggests that languages that tend to be  spoken in cold and small regions are more likely to have more complex languages. Neither of the enviromental principle components were reliable predicts of the second linguistic principle component.
-
+We then fit the same model as in Analysis 1,  using the rotated values for the first two principle components for the environmental and linguistic variables. The plots in Fig.\ 2, show the relationship between the principle components. Both environmental principle components were reliable predictors of the first linguistic principle component (PC1: $\beta=-0.56$; PC2: $\beta=0.47$). This suggests that languages that tend to be  spoken in cold and small regions are more likely to have more complex languages. Neither of the environmental principle components were reliable predictors of the second linguistic principle component.
 
 \subsection{Discussion}
-
 
 
 %%%% AOA %%%%%%
 \section{L1 learning and language systems}
 \cite{luniewska2015ratings}
 
+
+
 % of the linguistic system. If languages with certain Evidence for a relationship for L1 learners would be suggestive that the cognitive constraints of the 
 
 \section{Discussion and Conclusion}
+
+* stuff about informative about the origins of language
 
  Other work has empirical + modeling
 Some attempts

@@ -20,13 +20,13 @@ library(langcog)
 library(plyr)
 library(dplyr)
 library(tidyr)
-library(corrplot)
 library(broom)
 library(lme4)
 library(rworldmap)
 library(factoextra)
 library(grid)
 library(gridExtra)
+library(ggrepel)
 
 opts_chunk$set(cache = F, warning = F, message = F)
 
@@ -43,7 +43,8 @@ mapTheme = theme(plot.background = element_blank(),
 removeOutlier <- function(dataCol, num_deviations) {
   boolean.outlier = abs(dataCol) > mean(dataCol, na.rm = T) +
                     (num_deviations*sd(dataCol, na.rm = T))
-  df = bind_cols(as.data.frame(boolean.outlier), as.data.frame(dataCol))
+  df = bind_cols(as.data.frame(boolean.outlier),
+                 as.data.frame(dataCol))
   cleaned.dataCol = ifelse(df$boolean.outlier, NA, df$dataCol)
   cleaned.dataCol
 }
@@ -238,7 +239,6 @@ atkinson = read.csv("../data/atkinson_2011.csv") %>%
   mutate(ISO = as.factor(unlist(lapply(strsplit(as.character(ISO),
                                       " "),function(x) x[1])))) %>%
   distinct(ISO) 
-
 ```
 
 Lewis & Frank (under review): Complexity Bias
@@ -318,7 +318,6 @@ ml = ml.raw %>%
 #more_ISOs = ml.raw %>%
 #  select(ISO, names) %>%
 #  mutate(names = tolower(names))
-
 ```
 
 Luniewska, et al. (2015): Age of acquistion (Aoa)
@@ -495,7 +494,6 @@ d.clean %>%
 ## Relationship between language and demographic variables
 Fits controling for family in a mixed effect model
 ```{r model fits with all variables (lmer), fig.width=10, fig.height = 12}
-
 # write.csv(d.clean,"../data/langLearnVar_data_clean.csv")
 # d.clean = read.csv("../data/langLearnVar_data_clean.csv")[-1]
 
@@ -548,6 +546,11 @@ sigs = d.model.fits %>%
   mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
   ungroup
 
+
+```
+
+Paper plot #1
+```{r, eval = F}
 facet_pop_names <- c(
   pop_log="Population \n(log)",
   ratio.L2.L1_log="L2:L1 \n(log)",
@@ -574,18 +577,23 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
           xmin = -Inf, xmax = Inf,
           ymin = -Inf, ymax = Inf, alpha = 0.2) +
   geom_point(size = .3) +
-  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), size = 2, color = "green") +
+  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
+              size = 2, color = "green") +
   facet_grid(lang_measure ~ pop_measure, scales = "free", 
-             labeller = labeller(pop_measure = facet_pop_names, lang_measure = facet_lang_names)) +
+             labeller = labeller(pop_measure = facet_pop_names,
+                                 lang_measure = facet_lang_names)) +
   scale_fill_manual(values = c( "mediumblue", "grey99", "red1")) +
-  theme_bw() +
   xlab("\nEnvironmental variables") +
   ylab("Language variables\n") +
-  theme(legend.position = "none", axis.title = element_text(size = 21), strip.text= element_text(size = 17))
+    theme_bw() +
+  theme(legend.position = "none", 
+        axis.title = element_text(size = 21), 
+        strip.text= element_text(size = 17))
 dev.off()
 ```
 
-##  PCA for demographic variables
+## Principle Component Analysis
+###  PCA for demographic variables
 prep by checking for correlations
 ```{r}
 # get demographic variables only (excluding L2 because intersections contains only 40 languages)
@@ -608,13 +616,14 @@ d.demo =  select(d.demo, -lat)
 
 # do pca
 pca.demo = prcomp(na.omit(d.demo), scale = TRUE)
-barplot(pca.demo$sdev/pca.demo$sdev[1])
-pca.demo = prcomp(na.omit(d.demo), scale = TRUE, tol = .6)
-
 # look at variance explained
 fviz_eig(pca.demo, addlabels = TRUE, 
                linecolor ="red", geom = "line") +
   theme_bw()
+
+barplot(pca.demo$sdev/pca.demo$sdev[1])
+pca.demo = prcomp(na.omit(d.demo), scale = TRUE, tol = .6)
+
 
 # plot loadings
 pcs.demo <- cbind(names(d.demo),
@@ -730,7 +739,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   theme(legend.position = "none")
 ```
 
-## PCA with langauge variables
+### PCA with langauge variables
 prep by looking at correlations
 ```{r}
 d.lang =  d.clean %>%
@@ -843,18 +852,19 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   theme(legend.position = "none")
 ```
 
-
-All PCAs
+### All PCAs
+Model fits
 ```{r, fig.width=10, fig.height = 6}
-all.pca = left_join(d.pca.demo, d.pca.lang[,c("PC1_L", "PC2_L", "ISO")],
+all.pca = left_join(d.pca.demo,
+                    d.pca.lang[,c("PC1_L", "PC2_L", "ISO")],
                     by = "ISO")
 
 demo_vars_crit2 = c("hot", "small")
 lang_vars_crit2 = c("PC1_L", "PC2_L")
 
 d.scatter.fam = all.pca %>% 
-  select(PC1_L, PC2_L, hot, big, 
-         lang.family, native.country, ISO) %>%
+  select(PC1_L, PC2_L, hot, small, 
+         lang.family, native.country, ISO, language) %>%
   gather(lang_measure, lang_value, 
          which(is.element(names(.), lang_vars_crit2))) %>%
   group_by(lang_measure) %>%
@@ -886,8 +896,6 @@ sigs = d.model.fits %>%
   mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
   ungroup
 
-#as.data.frame(d.model.fits)
-
 ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_rect(data = sigs, aes(fill = sig.col),
           xmin = -Inf, xmax = Inf,
@@ -902,39 +910,66 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   theme(legend.position = "none")
 ```
 
-Paper plot
+Paper plot #2
 ```{r, eval = F}
-
+dcopy = d.scatter.fam
 vplayout <- function(x, y)
   viewport(layout.pos.row = x, layout.pos.col = y)
 
-facet_env_names <- c(PC1="Hot and rainy", PC2="Large")
-facet_lang_names <- c(PC1="Complex", PC2="Short words")
+#Extract Legend 
+g_legend<-function(a.gplot){ 
+  tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
+  legend <- tmp$grobs[[leg]] 
+  return(legend)} 
+
+facet_env_names <- c(PC1="PC1: Hot and rainy", PC2="PC2: Small")
+facet_lang_names <- c(PC1="PC1: Complex", PC2="PC2: Short words")
 
 pc.demo = ggplot(pcs.demo) +
   geom_bar(aes(x = variable, y = value, fill = variable), stat="identity") +
   facet_wrap(~pc, labeller = labeller(pc = facet_env_names)) +
   ylab("Component loading")+
+  theme_classic() +
   theme(axis.text.x = element_blank(),
         axis.title.x = element_blank(),
-        strip.text= element_text(size = 17)) +
+        strip.text= element_text(size = 21), 
+        axis.title = element_text(size = 21),
+        strip.background = element_rect(fill = "grey", colour = "white")) +
+  ylim(-.6, .7) +
   scale_x_discrete(breaks=NULL) +
-  scale_fill_brewer(palette="YlOrRd") +
-  #theme(legend.margin=unit(-5,"cm")) 
+  scale_fill_brewer(palette="YlOrRd")  +
   theme(legend.position = "none")
 
+
+
 pc.lang = ggplot(pcs.lang) +
-  geom_bar(aes(x = variable, y = value, fill = variable), stat="identity") +
+  geom_bar(aes(x = variable, y = value,
+               fill = variable), stat="identity") +
+    theme_classic() +
   theme(axis.text.y = element_blank(),
         axis.title.y = element_blank(),
-        strip.text= element_text(size = 17))  +
+        strip.text= element_text(size = 21), 
+        axis.title = element_text(size = 21), 
+        strip.background = element_rect(fill = "grey", colour = "white")) +
   coord_flip() +
   facet_grid(pc ~ ., scales="free_x", 
              labeller = labeller(pc = facet_lang_names)) +
+  ylim(-.6, .7) +
   scale_x_discrete(breaks=NULL) +
   ylab("Component loading") +
   theme(legend.position = "none")  +
   scale_fill_brewer(palette="BuGn") 
+
+
+## add missing names:
+extra_names = data.frame(ISO = c("tgl", "tam", "sna", "wol"), 
+                         language = c("tagalog", "tamil", "shona", "wolof"))
+
+d.scatter.fam = left_join(d.scatter.fam, extra_names, by="ISO") %>%
+                  mutate(language = as.factor(ifelse(is.na(language.x),
+                                           as.character(language.y),
+                                           as.character(language.x))))
 
 p1 <- ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_rect(data = sigs, aes(fill = sig.col),
@@ -942,44 +977,65 @@ p1 <- ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
             ymin = -Inf, ymax = Inf, alpha = 0.2) +
   geom_point() +
   geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
-              size = 1) +
+              size = 2) +
   facet_grid(lang_measure~pop_measure, scales = "free") +
+  geom_text_repel(aes(label = language), size = 3) +
+  #geom_text(aes(label = language), size = 3) +
   scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
+  theme_bw() + 
   theme(strip.background = element_blank(),
-        strip.text = element_blank())+
+        strip.text = element_blank(), 
+        axis.title = element_text(size = 21)) +
   ylab("Rotated language values")+
   xlab("Rotated environmental values")+
   theme(legend.position = "none") 
 
+SIZE= 1.6
+pc.demo.legend = ggplot(pcs.demo) +
+  geom_bar(aes(x = variable, y = value, fill = variable), stat = "identity") +
+  scale_fill_brewer(guide = guide_legend(title = NULL, reverse = T, 
+                                         keywidth = SIZE, keyheight = SIZE),
+                                         palette="YlOrRd") 
+legend.demo <- g_legend(pc.demo.legend) 
+
+pc.lang.legend = ggplot(pcs.lang) +
+  geom_bar(aes(x = variable, y = value, fill = variable), stat = "identity") +
+  #theme(legend.title=element_blank()) +
+  scale_fill_brewer(guide = guide_legend(title = NULL, reverse = T, 
+                                         keywidth = SIZE, keyheight = SIZE),
+                      palette="BuGn")  
+legend.lang <- g_legend(pc.lang.legend) 
+
+
+pdf("../papers/cogsci2016/figs/plot2.pdf", width = 18, height = 12)
+#quartz(width = 9, height = 6)
+legend.demo$vp$x <- unit(.75, 'npc')
+legend.demo$vp$y <- unit(.84, 'npc')
+legend.lang$vp$x <- unit(.9, 'npc')
+legend.lang$vp$y <- unit(.8, 'npc')
 grid.newpage()
-pushViewport(viewport(layout = grid.layout(6, 6))) # a 5 by 5 grid
-print(pc.demo, vp=vplayout(1:2.3,1:4)) # the first density plot will occupy the top of the grid
-print(pc.lang, vp=vplayout(3:6,5:6)) # the main x/y plot will instead spread across most of the grid
-print(p1, vp=vplayout(3:6,1:4)) # with the second density plot occupying a narrow vertical strip at the right
+pushViewport(viewport(layout = grid.layout(6, 6))) 
+print(pc.demo, vp=vplayout(1:2.3,1:4)) 
+print(pc.lang, vp=vplayout(3:6,5:6)) 
+print(p1, vp=vplayout(3:6,1:4)) 
+grid.draw(legend.demo) 
+grid.draw(legend.lang) 
+dev.off()
+
+
 
 ```
-## Replicate Lupyan and Dale (2010) complexity score plot (Fig. 3)
-```{r Lupyan and Dale complexity plot}
-ld.demo.qual %>%
-  mutate(morphological.complexity.factor =
-           as.factor(morphological.complexity)) %>%
-  group_by(morphological.complexity.factor) %>%
-  multi_boot(column="pop_log",
-              summary_groups = c("morphological.complexity.factor"),
-              statistics_functions = c("mean", "ci_lower","ci_upper")) %>%
-  mutate(morphological.complexity =  
-           as.numeric(as.character(morphological.complexity.factor))) %>%
-  ggplot() +
-  geom_pointrange(aes(x= morphological.complexity.factor,
-                      y = mean, ymin = ci_lower, ymax = ci_upper)) + 
-  geom_smooth(method = "lm",aes(morphological.complexity-5, mean)) +
-  # theres a weird offset because complexity is a factor?
-  ylab("Log population") + 
-  xlab("Morphological complexity") +
-  ggtitle("Lupyan and Dale (2010) Fig. 3 reproduction") +
-  theme_bw() 
+
+
+## AOA
+
+### AOA environmental variables 
+```{r}
+#temperature, and sd?
+
 ```
-## Relationship between language variables for AOA
+
+### AOA language variables 
 ```{r AOA and language variables, eval = F}
 # predicted relationship with AOA  with TTR and number of consonants
 
@@ -1015,7 +1071,6 @@ tidy(lmer(mean.aoa ~ n.phonemes_log + (n.phonemes_log|lang.family) + (1|native.c
 #n_vowels
 tidy(lmer(mean.aoa ~ n.vowels_log + (n.vowels_log|lang.family) + (1|native.country) , d.clean))[2, "statistic"]
 
-
 ggplot(d.clean, aes(mean.length, mean.aoa, label = ISO)) +
   geom_point() +
   geom_label() +
@@ -1045,4 +1100,61 @@ ggplot(d.clean, aes(mean.dependency.length , mean.aoa, label = ISO)) +
   geom_point() +
   geom_label() +
   geom_smooth(method = "lm")
+```
+
+### AOA and word order
+```{r}
+d.clean = ld %>%
+  select(ISO, DRYSOV) %>%
+  left_join(d.clean, by="ISO")
+
+old = 1:7
+new = new = c("SOV", "SVO", "VSO", "VOS", "OVS", "OSV", "none")
+d.clean$DRYSOV = mapvalues(d.clean$DRYSOV, 
+                         from = as.character(old),
+                         to = as.character(new))
+
+d.clean %>%
+  distinct(ISO) %>%
+  filter(!is.na(mean.aoa))%>%
+  group_by(DRYSOV) %>%
+  multi_boot_standard("mean.aoa", na.rm = T) %>%
+  ggplot(aes(x = DRYSOV, y = mean, fill = DRYSOV)) +
+    geom_bar(stat = "identity") +
+    geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper),
+                  size=.3,
+                  width=.2,
+                  position=position_dodge(.9)) +
+  theme_bw()
+```
+Too small of a sample to see differences across categories.
+
+### AOA and isolating vs. concatenating
+```{r}
+```
+
+### AOA and prefixing vs. suffixing
+```{r}
+```
+
+## Replicate Lupyan and Dale (2010) complexity score plot (Fig. 3)
+```{r Lupyan and Dale complexity plot}
+ld.demo.qual %>%
+  mutate(morphological.complexity.factor =
+           as.factor(morphological.complexity)) %>%
+  group_by(morphological.complexity.factor) %>%
+  multi_boot(column="pop_log",
+              summary_groups = c("morphological.complexity.factor"),
+              statistics_functions = c("mean", "ci_lower","ci_upper")) %>%
+  mutate(morphological.complexity =  
+           as.numeric(as.character(morphological.complexity.factor))) %>%
+  ggplot() +
+  geom_pointrange(aes(x= morphological.complexity.factor,
+                      y = mean, ymin = ci_lower, ymax = ci_upper)) + 
+  geom_smooth(method = "lm",aes(morphological.complexity-5, mean)) +
+  # theres a weird offset because complexity is a factor?
+  ylab("Log population") + 
+  xlab("Morphological complexity") +
+  ggtitle("Lupyan and Dale (2010) Fig. 3 reproduction") +
+  theme_bw() 
 ```
