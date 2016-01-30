@@ -14,6 +14,7 @@ output:
 
 ```{r setup, echo = F, warning = F, message = F}
 rm(list = ls())
+
 library(knitr)
 library(ggplot2)
 library(langcog)
@@ -974,10 +975,17 @@ pc.demo = ggplot(pcs.demo) +
   scale_fill_brewer(palette="YlOrRd")  +
   theme(legend.position = "none")
 
+# reorder factor levels for so organize neatly for PCAS
+pcs.lang$variable<- factor(pcs.lang$variable,
+                                    levels = rev(c("morphological.complexity",
+                                             "scaled.LDT.H", "mean.length",
+                                            "n.consonants_log","n.vowels_log")))
+
+
 pc.lang = ggplot(pcs.lang) +
   geom_bar(aes(x = variable, y = value,
                fill = variable), stat="identity") +
-    theme_classic() +
+  theme_classic() +
   theme(axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         strip.text= element_text(size = 21), 
@@ -1005,23 +1013,24 @@ p1 <- ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_rect(data = sigs, aes(fill = sig.col),
             xmin = -Inf, xmax = Inf,
             ymin = -Inf, ymax = Inf, alpha = 0.2) +
-  geom_point() +
+
   geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
-              size = 2) +
+              size = 3, color = "grey48" ) +
   facet_grid(lang_measure~pop_measure, scales = "free") +
-  geom_text_repel(aes(label = language), size = 3.5) +
+  geom_text_repel(aes(label = language), size = 5.5) +
+  geom_point() +
   #geom_text(aes(label = language), size = 3) +
   scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
   theme_bw() + 
   theme(strip.background = element_blank(),
         strip.text = element_blank(), 
-        axis.title = element_text(size = 21)) +
+        axis.title = element_text(size = 24)) +
   ylab("Rotated language values")+
   xlab("Rotated environmental values")+
   theme(legend.position = "none") 
 p1
 
-SIZE= 1.6
+SIZE = 1.6
 FONT_SIZE = 20
 pc.demo.legend = ggplot(pcs.demo) +
   geom_bar(aes(x = variable, y = value, fill = variable), stat = "identity") +
@@ -1042,7 +1051,7 @@ legend.lang <- g_legend(pc.lang.legend)
 
 
 pdf("../papers/cogsci2016/figs/plot2.pdf", width = 18, height = 12)
-#quartz(width = 9, height = 6)
+#quartz(width = 18, height = 12)
 legend.demo$vp$x <- unit(.75, 'npc')
 legend.demo$vp$y <- unit(.84, 'npc')
 legend.lang$vp$x <- unit(.9, 'npc')
@@ -1052,8 +1061,8 @@ pushViewport(viewport(layout = grid.layout(6, 6)))
 print(pc.demo, vp=vplayout(1:2.3,1:4)) 
 print(pc.lang, vp=vplayout(3:6,5:6)) 
 print(p1, vp=vplayout(3:6,1:4)) 
-grid.draw(legend.demo) 
-grid.draw(legend.lang) 
+#grid.draw(legend.demo) 
+#grid.draw(legend.lang) 
 dev.off()
 ```
 
@@ -1304,6 +1313,11 @@ cor.test(d.clean$TTR.LDT, d.clean$mean.aoa)
 ```
 
 Predicted relationship with AOA number of consonants (TTR has reliable correlation, but not significant in lmer)
+
+#### AOA and PCA
+```{r}
+
+```
 
 ### AOA misc. morphosyntactic features
 
