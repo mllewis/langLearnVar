@@ -321,7 +321,7 @@ ml = ml.raw %>%
 ```
 
 Luniewska, et al. (2015): Age of acquistion (Aoa)
-```{r, eval = F}
+```{r, eval = T}
 aoa.raw = read.csv("../data/luniewska_2015.csv", 
                    header = T, fileEncoding = "latin1")
 
@@ -360,7 +360,7 @@ load data
 d = read.csv("../data/langLearnVar_data.csv")[,-1]
 ```
 
-## Data cleaning
+## Clean data
 Remove outliers and check for normality
 ```{r clean data, fig.width = 15, fig.height = 10}
 d.clean = d %>%
@@ -445,7 +445,6 @@ d.clean %>%
     theme_bw()
 ```
 
-
 Number of languages we have data, for each variable
 ```{r, fig.height = 6}
 d.clean %>%
@@ -492,7 +491,7 @@ d.clean %>%
 ```
      
 ## Relationship between language and demographic variables
-Fits controling for family in a mixed effect model
+### Fits controling for family in a mixed effect model
 ```{r model fits with all variables (lmer), fig.width=10, fig.height = 12}
 # write.csv(d.clean,"../data/langLearnVar_data_clean.csv")
 # d.clean = read.csv("../data/langLearnVar_data_clean.csv")[-1]
@@ -512,18 +511,31 @@ d.scatter.fam = d.clean %>%
   select(pop_log, ratio.L2.L1_log,
          n.neighbors_log, area_log, mean.temp, sd.temp, sum.precip,
          sd.precip_log, morphological.complexity,TTR.LDT, p.complexity.bias,
-         mean.length,n.consonants_log,n.vowels_log,
+         mean.length, n.consonants_log, n.vowels_log,
          lang.family, native.country) %>%
-  #mutate_each(funs(as.numeric(scale(.))), c(-15,-16)) %>% #scaling doesn't change anything
   gather(lang_measure, lang_value,
          which(is.element(names(.), lang_vars_crit))) %>%
   group_by(lang_measure) %>%
   gather(pop_measure, pop_value,
-         which(is.element(names(.), demo_vars_crit)))
+         which(is.element(names(.), demo_vars_crit))) 
+
 
 is.na(d.scatter.fam) <- sapply(d.scatter.fam, is.infinite) 
 d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
                         !is.na(lang_value))
+
+# reorder factor levels for facet plots below (affects order in other dfs)
+d.scatter.fam$lang_measure <- factor(d.scatter.fam$lang_measure,
+                                    levels = c("morphological.complexity",
+                                             "p.complexity.bias", "TTR.LDT",
+                                             "mean.length", "n.consonants_log",
+                                             "n.vowels_log"))
+
+d.scatter.fam$pop_measure <- factor(d.scatter.fam$pop_measure,
+                                    levels = c('pop_log', 'ratio.L2.L1_log',
+                                               'n.neighbors_log', 'area_log',
+                                               'mean.temp', 'sd.temp',
+                                               'sum.precip', 'sd.precip_log' ))
 
 # get model fits
 d.model.fits = d.scatter.fam %>%
@@ -535,8 +547,9 @@ line.fits = d.model.fits %>%
         filter(term == "pop_value" | term == "(Intercept)") %>%
         select(-std.error, -statistic, -group) %>%
         spread(term, estimate) %>%
-        rename(s = pop_value)
-names(line.fits)[3] = "i"
+        rename(s = pop_value, 
+               i = `(Intercept)`)
+
 
 sigs = d.model.fits %>%
   filter(term == "pop_value") %>%
@@ -545,12 +558,10 @@ sigs = d.model.fits %>%
                                  "none"))) %>%
   mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
   ungroup
-
-
 ```
 
 Paper plot #1
-```{r, eval = F}
+```{r}
 facet_pop_names <- c(
   pop_log="Population \n(log)",
   ratio.L2.L1_log="L2:L1 \n(log)",
@@ -570,30 +581,55 @@ facet_lang_names <- c(
   n.consonants_log="N. Consonants \n(log)",
   n.vowels_log="N. Vowels \n(log)"
 )
+```
 
-pdf("../papers/cogsci2016/figs/plot1.pdf", width = 18, height = 14)
+```{r, eval = F}
+#pdf("../papers/cogsci2016/figs/plot1.pdf", width = 18, height = 14)
 ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
+  facet_grid(lang_measure ~ pop_measure, 
+             scales = "free", 
+             labeller = labeller(pop_measure = facet_pop_names,
+                                lang_measure = facet_lang_names)) +
   geom_rect(data = sigs, aes(fill = sig.col), 
           xmin = -Inf, xmax = Inf,
           ymin = -Inf, ymax = Inf, alpha = 0.2) +
-  geom_point(size = .3) +
+  geom_point(size = 1.1, color = "grey48") +
   geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
-              size = 2, color = "green") +
-  facet_grid(lang_measure ~ pop_measure, scales = "free", 
-             labeller = labeller(pop_measure = facet_pop_names,
-                                 lang_measure = facet_lang_names)) +
+              size = 2, color = "black") +
   scale_fill_manual(values = c( "mediumblue", "grey99", "red1")) +
   xlab("\nEnvironmental variables") +
   ylab("Language variables\n") +
-    theme_bw() +
+  theme_bw() +
   theme(legend.position = "none", 
         axis.title = element_text(size = 21), 
         strip.text= element_text(size = 17))
-dev.off()
+#dev.off()
+```
+
+### Replicate Lupyan and Dale (2010) complexity score plot (Fig. 3)
+```{r Lupyan and Dale complexity plot}
+ld.demo.qual %>%
+  mutate(morphological.complexity.factor =
+           as.factor(morphological.complexity)) %>%
+  group_by(morphological.complexity.factor) %>%
+  multi_boot(column="pop_log",
+              summary_groups = c("morphological.complexity.factor"),
+              statistics_functions = c("mean", "ci_lower","ci_upper")) %>%
+  mutate(morphological.complexity =  
+           as.numeric(as.character(morphological.complexity.factor))) %>%
+  ggplot() +
+  geom_pointrange(aes(x= morphological.complexity.factor,
+                      y = mean, ymin = ci_lower, ymax = ci_upper)) + 
+  geom_smooth(method = "lm",aes(morphological.complexity-5, mean)) +
+  # theres a weird offset because complexity is a factor?
+  ylab("Log population") + 
+  xlab("Morphological complexity") +
+  ggtitle("Lupyan and Dale (2010) Fig. 3 reproduction") +
+  theme_bw() 
 ```
 
 ## Principle Component Analysis
-###  PCA for demographic variables
+###  PCA with demographic variables
 prep by checking for correlations
 ```{r}
 # get demographic variables only (excluding L2 because intersections contains only 40 languages)
@@ -624,7 +660,6 @@ fviz_eig(pca.demo, addlabels = TRUE,
 barplot(pca.demo$sdev/pca.demo$sdev[1])
 pca.demo = prcomp(na.omit(d.demo), scale = TRUE, tol = .6)
 
-
 # plot loadings
 pcs.demo <- cbind(names(d.demo),
                     gather(as.data.frame(pca.demo$rotation), 
@@ -650,9 +685,6 @@ d.demo[!is.na(d.demo)] = 0
 d.demo[is.na(d.demo)] = 1
 good_is = which(rowSums(d.demo) == 0)
 d.pca.demo = d.clean[good_is,] %>% cbind(pca.demo$x)
-
-# flip size PC so can be interpretted as "bigness"
-#d.pca.demo$PC2 = -d.pca.demo$PC2  
 
 # rename PCs
 names(d.pca.demo)[names(d.pca.demo) == "PC1"] = "hot"
@@ -714,8 +746,8 @@ line.fits = d.model.fits %>%
           filter(term == "pop_value" | term == "(Intercept)") %>%
   select(-std.error, -statistic, -group) %>%
   spread(term, estimate) %>%
-  rename(s = pop_value)
-names(line.fits)[3] = "i"
+  rename(s = pop_value, 
+        i = `(Intercept)`)
 
 sigs = d.model.fits %>%
   filter(term == "pop_value") %>%
@@ -730,7 +762,8 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
         xmin = -Inf, xmax = Inf,
         ymin = -Inf, ymax = Inf, alpha = 0.2) +
   geom_point(size = .3) +
-  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), size = 1, color = "green") +
+  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
+              size = 1, color = "green") +
   facet_grid(lang_measure~pop_measure, scales = "free") +
   scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
   theme_bw() +
@@ -739,7 +772,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   theme(legend.position = "none")
 ```
 
-### PCA with langauge variables
+### PCA with language variables
 prep by looking at correlations
 ```{r}
 d.lang =  d.clean %>%
@@ -771,7 +804,7 @@ pcs.lang <- cbind(names(d.lang),
                            pc, value))
 names(pcs.lang)[1] = "variable"
  
-pcs.lang$variable =  factor(pcs.lang$variable , levels = pcs.lang$variable[1:8]) # order variables
+#pcs.lang$variable =  factor(pcs.lang$variable , levels = pcs.lang$variable[1:8]) # order variables
 pcs.lang$magnitude = ifelse(abs(pcs.lang$value)>.2, TRUE, FALSE)
 ggplot(pcs.lang) +
   geom_bar(aes(x = variable, y = value,
@@ -826,8 +859,8 @@ line.fits = d.model.fits %>%
           filter(term == "pop_value" | term == "(Intercept)") %>%
   select(-std.error, -statistic, -group) %>%
   spread(term, estimate) %>%
-  rename(s = pop_value)
-names(line.fits)[3] = "i"
+  rename(s = pop_value, 
+               i = `(Intercept)`)
 
 sigs = d.model.fits %>%
   filter(term == "pop_value") %>%
@@ -837,13 +870,13 @@ sigs = d.model.fits %>%
   mutate(pop_value = .1, lang_value = .1) %>% # this is a hack
   ungroup
 
-
 ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_rect(data = sigs, aes(fill = sig.col), 
           xmin = -Inf, xmax = Inf,
           ymin = -Inf, ymax = Inf, alpha = 0.2) +
   geom_point(size = .3) +
-  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), size = 1, color = "green") +
+  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
+              size = 1, color = "green") +
   facet_grid(lang_measure~pop_measure, scales = "free") +
   scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
   theme_bw() +
@@ -885,8 +918,8 @@ line.fits = d.model.fits %>%
           filter(term == "pop_value" | term == "(Intercept)") %>%
   select(-std.error, -statistic, -group) %>%
   spread(term, estimate) %>%
-  rename(s = pop_value)
-names(line.fits)[3] = "i"
+  rename(s = pop_value, 
+         i = `(Intercept)`)
 
 sigs = d.model.fits %>%
   filter(term == "pop_value") %>%
@@ -941,8 +974,6 @@ pc.demo = ggplot(pcs.demo) +
   scale_fill_brewer(palette="YlOrRd")  +
   theme(legend.position = "none")
 
-
-
 pc.lang = ggplot(pcs.lang) +
   geom_bar(aes(x = variable, y = value,
                fill = variable), stat="identity") +
@@ -961,7 +992,6 @@ pc.lang = ggplot(pcs.lang) +
   theme(legend.position = "none")  +
   scale_fill_brewer(palette="BuGn") 
 
-
 ## add missing names:
 extra_names = data.frame(ISO = c("tgl", "tam", "sna", "wol"), 
                          language = c("tagalog", "tamil", "shona", "wolof"))
@@ -979,7 +1009,7 @@ p1 <- ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
               size = 2) +
   facet_grid(lang_measure~pop_measure, scales = "free") +
-  geom_text_repel(aes(label = language), size = 3) +
+  geom_text_repel(aes(label = language), size = 3.5) +
   #geom_text(aes(label = language), size = 3) +
   scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
   theme_bw() + 
@@ -989,13 +1019,16 @@ p1 <- ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   ylab("Rotated language values")+
   xlab("Rotated environmental values")+
   theme(legend.position = "none") 
+p1
 
 SIZE= 1.6
+FONT_SIZE = 20
 pc.demo.legend = ggplot(pcs.demo) +
   geom_bar(aes(x = variable, y = value, fill = variable), stat = "identity") +
   scale_fill_brewer(guide = guide_legend(title = NULL, reverse = T, 
                                          keywidth = SIZE, keyheight = SIZE),
-                                         palette="YlOrRd") 
+                                         palette="YlOrRd") +
+  theme(legend.text=element_text(size=FONT_SIZE))
 legend.demo <- g_legend(pc.demo.legend) 
 
 pc.lang.legend = ggplot(pcs.lang) +
@@ -1003,7 +1036,8 @@ pc.lang.legend = ggplot(pcs.lang) +
   #theme(legend.title=element_blank()) +
   scale_fill_brewer(guide = guide_legend(title = NULL, reverse = T, 
                                          keywidth = SIZE, keyheight = SIZE),
-                      palette="BuGn")  
+                      palette="BuGn")  +
+  theme(legend.text=element_text(size=FONT_SIZE))
 legend.lang <- g_legend(pc.lang.legend) 
 
 
@@ -1021,88 +1055,259 @@ print(p1, vp=vplayout(3:6,1:4))
 grid.draw(legend.demo) 
 grid.draw(legend.lang) 
 dev.off()
-
-
-
 ```
 
 
 ## AOA
+### AOA and wordbank data
 
-### AOA environmental variables 
+Grand means across languages
 ```{r}
-#temperature, and sd?
+# read in word bank data
+aoa_data.wb = read.csv("../data/frank_underreview.csv") %>%
+  filter(aoa > 5 & aoa < 31)
+ 
+# get common words across languages in wb
+all_words = levels(aoa_data.wb$uni_lemma)
+for (i in 1:length(levels(aoa_data.wb$language))){
+  this_language = aoa_data.wb[aoa_data.wb$language == levels(aoa_data.wb$language)[i],]
+  all_words = intersect(all_words, unique(this_language$uni_lemma))
+}
 
+aoa.means.all = aoa_data.wb %>% 
+  mutate(language = tolower(language)) %>%
+  filter(is.element(uni_lemma, all_words)) %>%
+  group_by(language) %>%
+  summarise(mean.aoa.wb = mean(aoa)) %>%
+  left_join(select(d.clean, mean.aoa, language)) %>%
+  rename(mean.aoa.lu = mean.aoa) 
+
+ggplot(aoa.means.all, aes(x = mean.aoa.lu, y = mean.aoa.wb)) +
+  geom_text(aes(label = language)) +
+  geom_smooth(method = "lm") +
+  ggtitle("Grand means across langauges (wb common words only; n = 117)") +
+  theme_bw()
+
+cor.test(aoa.means.all$mean.aoa.wb, 
+         aoa.means.all$mean.aoa.lu, 
+         use = "pairwise.complete")
 ```
 
-### AOA language variables 
-```{r AOA and language variables, eval = F}
-# predicted relationship with AOA  with TTR and number of consonants
+Now lets look at the same words for both data sets [n = 56]
+```{r}
+all.wb.words = unlist(lapply(strsplit(
+    as.character(all_words)," "), function(x) x[1]))
 
-# morphological complexity
-tidy(lmer(mean.aoa ~ morphological.complexity + (morphological.complexity|lang.family) + (1|native.country), d.clean))[2, "statistic"]
-cor.test(d.clean$mean.aoa, d.clean$morphological.complexity)
+aoa.raw$word  = unlist(lapply(strsplit(
+    as.character(aoa.raw$word)," "), function(x) x[1]))
 
-# complexity bias 
-tidy(lmer(mean.aoa ~ p.complexity.bias + (p.complexity.bias|lang.family) + (1|native.country), d.clean))[2, "statistic"]
-cor.test(d.clean$mean.aoa, d.clean$p.complexity.bias)
+aoa.lu.common.words.only = aoa.raw %>%
+  #filter lu words based on the ones that are common in wb
+  filter(is.element(word,all.wb.words)) %>% 
+  gather(language_aoa, aoa, grep("aoa", 
+                                 names(aoa.raw))) %>%
+  mutate(language_aoa = tolower(unlist(lapply(strsplit(
+    as.character(language_aoa),"_"), function(x) x[1])))) %>%
+  select(-3:-27) %>%
+  rename(language = language_aoa) %>%
+  group_by(language) %>%
+  summarize(mean.aoa = mean(aoa, na.rm = T)) 
 
-# TTR 
-tidy(lmer(mean.aoa ~ TTR.LDT+ (TTR.LDT|lang.family) + (1|native.country), d.clean))[2, "statistic"]
-cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.TTR)
-cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.H)
-cor.test(d.clean$mean.aoa, d.clean$scaled.LDT.ZM)
+aoa.means.all.common = aoa_data.wb %>% 
+  mutate(language = tolower(language)) %>%
+  filter(is.element(uni_lemma, all_words)) %>%
+  group_by(language) %>%
+  summarise(mean.aoa.wb = mean(aoa)) %>%
+  left_join(select(aoa.lu.common.words.only, mean.aoa, language)) %>%
+  rename(mean.aoa.lu = mean.aoa) 
 
-# dependency length
-tidy(lmer(mean.aoa ~ mean.dependency.length + (mean.dependency.length|lang.family) + (1|native.country), d.clean))[2, "statistic"]
-cor.test(d.clean$mean.aoa, d.clean$mean.dependency.length)
+ggplot(aoa.means.all.common, aes(x = mean.aoa.lu, y = mean.aoa.wb)) +
+  geom_text(aes(label = language)) +
+  geom_smooth(method = "lm") +
+  ggtitle("Grand means across langauges (common words only in both datasets; n = 56)") +
+  theme_bw()
 
-# mean length
-tidy(lmer(mean.aoa ~ mean.length + (mean.length|lang.family) + (1|native.country), d.clean)) [2, "statistic"]
-cor.test(d.clean$mean.aoa, d.clean$mean.length)
-
-# n_consonants **
-tidy(lmer(mean.aoa ~ n.consonants_log + (n.consonants_log|lang.family) + (1|native.country) , d.clean))[2, "statistic"]
-tidy(lmer(mean.aoa ~ normalized.consonant.diversity  + (1|native.country) , d.clean)) [2, "statistic"]
-
-# n_phonemes
-tidy(lmer(mean.aoa ~ n.phonemes_log + (n.phonemes_log|lang.family) + (1|native.country) , d.clean))[2, "statistic"]
-
-#n_vowels
-tidy(lmer(mean.aoa ~ n.vowels_log + (n.vowels_log|lang.family) + (1|native.country) , d.clean))[2, "statistic"]
-
-ggplot(d.clean, aes(mean.length, mean.aoa, label = ISO)) +
-  geom_point() +
-  geom_label() +
-  geom_smooth(method = "lm")
-
-ggplot(d.clean, aes(scaled.LDT.TTR, mean.aoa, label = ISO)) +
-  geom_point() +
-  geom_label() +
-  geom_smooth(method = "lm")
-
-ggplot(d.clean, aes(n.consonants_log, mean.aoa, label = ISO)) +
-  geom_point() +
-  geom_label() +
-  geom_smooth(method = "lm")
-
-ggplot(d.clean, aes(n.phonemes_log, mean.aoa, label = ISO)) +
-  geom_point() +
-  geom_label() +
-  geom_smooth(method = "lm")
-
-ggplot(d.clean, aes(n.vowels_log, mean.aoa, label = ISO)) +
-  geom_point() +
-  geom_label() +
-  geom_smooth(method = "lm")
-
-ggplot(d.clean, aes(mean.dependency.length , mean.aoa, label = ISO)) +
-  geom_point() +
-  geom_label() +
-  geom_smooth(method = "lm")
+cor.test(aoa.means.all.common$mean.aoa.wb, 
+         aoa.means.all.common$mean.aoa.lu, 
+         use = "pairwise.complete")
 ```
 
-### AOA and word order
+At word level, by language
+```{r,  fig.width=10, fig.height = 3}
+aoa.lu.common.words.only = aoa.raw %>%
+  filter(is.element(word,all.wb.words))  %>% #filter lu words based on the ones that are common in wb
+  gather(language_aoa, aoa, grep("aoa", 
+                                 names(aoa.raw))) %>%
+  mutate(language_aoa = tolower(unlist(lapply(strsplit(
+    as.character(language_aoa),"_"), function(x) x[1])))) %>%
+  select(-3:-27) %>%
+  rename(language = language_aoa) %>%
+  select(word, language, aoa) %>%
+  group_by(word, language) %>%
+  summarise(aoa = mean(aoa, na.rm = T)) %>%
+  mutate(dataset = "lu")
+
+aoa_data.wb$uni_lemma = unlist(lapply(strsplit(
+    as.character(aoa_data.wb$uni_lemma)," "), function(x) x[1]))
+
+common_words_across_all_langs_and_datasets = unique(aoa.lu.common.words.only$word)
+
+aoa.wb.common.words.only = aoa_data.wb %>% 
+  mutate(language = tolower(language)) %>%
+  group_by(language, uni_lemma) %>%
+  summarise(aoa = mean(aoa, na.rm = T)) %>%
+  filter(is.element(uni_lemma, common_words_across_all_langs_and_datasets)) %>%
+  rename(word = uni_lemma) %>%
+  select(language, word, aoa) %>%
+  mutate(dataset = "wb") 
+
+common_languages = intersect(tolower(as.character(unique(aoa_data.wb$language))), #wb
+                             unique(aoa.lu.common.words.only$language)) #lu
+
+all.aoa.by.word = rbind(aoa.wb.common.words.only, 
+                        aoa.lu.common.words.only) %>%
+  filter(is.element(language, common_languages))  %>%
+  group_by(language, dataset) %>%
+  spread(dataset, aoa)
+
+ggplot(all.aoa.by.word, aes(x = lu, y = wb, 
+                            group = language, color = language)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_grid(.~language) +
+  ggtitle("By word means for each language (common words only (n = 56))") +
+  theme_bw() +
+  theme(legend.position="none") 
+
+summary(lm(wb ~ lu + language, data = all.aoa.by.word))
+summary(lmer(wb ~ lu + (lu|language), all.aoa.by.word))
+```
+
+By common words only
+```{r}
+all.means.by.word = all.aoa.by.word %>%
+  group_by(word) %>% 
+  summarise(mean.lu = mean(lu, na.rm = T),
+             mean.wb = mean(wb, na.rm  = T))
+
+ggplot(all.means.by.word, 
+       aes(x = mean.lu, y = mean.wb)) +
+  geom_text(aes(label = word)) +
+  geom_smooth(method = "lm") +
+  ggtitle("By word means (common words only (n = 56)") +
+  theme_bw()
+
+cor.test(all.means.by.word$mean.lu, all.means.by.word$mean.wb)
+```
+
+For the 7 common languages, WB and Lu are relatively correlated (r = .36).
+
+### AOA and environmental variables 
+```{r fig.width=10, fig.height = 3}
+d.scatter.fam = d.clean %>% 
+  select(pop_log, ratio.L2.L1_log,
+         n.neighbors_log, area_log, mean.temp, sd.temp, sum.precip,
+         sd.precip_log, language, mean.aoa, lang.family, native.country) %>%
+  gather(pop_measure, pop_value,
+         which(is.element(names(.), demo_vars_crit)))
+
+d.model.fits = d.scatter.fam %>%
+  group_by(pop_measure) %>%
+  do(tidy(lmer(mean.aoa ~ pop_value + (pop_value|lang.family) +
+                 (1|native.country), data=.))) 
+
+line.fits = d.model.fits %>%
+        filter(term == "pop_value" | term == "(Intercept)") %>%
+        select(-std.error, -statistic, -group) %>%
+        spread(term, estimate) %>%
+        rename(s = pop_value, 
+               i = `(Intercept)`)
+
+sigs = d.model.fits %>%
+  filter(term == "pop_value") %>%
+  mutate(sig.col = ifelse(statistic > 1.96, "pos",
+                          ifelse(statistic < -1.96, "neg",
+                                 "none"))) %>%
+  mutate(pop_value = .1, mean.aoa = .1) %>% # this is a hack
+  ungroup
+
+ggplot(d.scatter.fam, aes(x = pop_value, y = mean.aoa)) +
+  geom_rect(data = sigs, aes(fill = sig.col),
+            xmin = -Inf, xmax = Inf,
+            ymin = -Inf, ymax = Inf, alpha = 0.2) +
+  geom_point() +
+  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
+              size = 2) +
+  facet_grid(.~pop_measure, scales = "free",
+                          labeller = labeller(pop_measure = facet_pop_names)) +
+  geom_text_repel(aes(label = language), size = 3) +
+  scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
+  theme_bw() + 
+  theme(legend.position = "none") 
+```
+
+Temperature is positively correlated with AOA, and precipitation is negatively correlated. Children learn words later in hotter places with little variability in preicipitation.
+
+### AOA and language variables 
+```{r AOA and language variables, fig.width=10, fig.height = 3}
+lang_vars_crit = c("p.complexity.bias","TTR.LDT",
+                   "mean.dependency.length", "mean.length",
+                   "n.consonants_log", "n.vowels_log",
+                   "morphological.complexity")
+
+d.scatter.fam = d.clean %>% 
+  filter(language != "xhosa") %>% # an outlier
+  select(p.complexity.bias,TTR.LDT,
+                   mean.dependency.length, mean.length,
+                   n.consonants_log, n.vowels_log,
+                   morphological.complexity, mean.aoa, 
+                   lang.family, native.country, language) %>%
+  gather(lang_measure, lang_value,
+         which(is.element(names(.), lang_vars_crit)))
+
+# get model fits
+d.model.fits = d.scatter.fam %>%
+  group_by(lang_measure) %>%
+  do(tidy(lmer(mean.aoa ~ lang_value + (lang_value|lang.family) +
+                 (1|native.country), data=.))) 
+
+line.fits = d.model.fits %>%
+        filter(term == "lang_value" | term == "(Intercept)") %>%
+        select(-std.error, -statistic, -group) %>%
+        spread(term, estimate) %>%
+        rename(s = lang_value, 
+               i = `(Intercept)`)
+
+sigs = d.model.fits %>%
+  filter(term == "lang_value") %>%
+  mutate(sig.col = ifelse(statistic > 1.96, "pos",
+                          ifelse(statistic < -1.96, "neg",
+                                 "none"))) %>%
+  mutate(lang_value = .1, mean.aoa = .1) %>% # this is a hack
+  ungroup
+
+ggplot(d.scatter.fam, aes(x = lang_value, y = mean.aoa)) +
+  geom_rect(data = sigs, aes(fill = sig.col),
+           xmin = -Inf, xmax = Inf,
+           ymin = -Inf, ymax = Inf, alpha = 0.2) +
+  geom_point() +
+  geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
+              size = 2) +
+  facet_grid(.~lang_measure, scales = "free") +
+  geom_text_repel(aes(label = language), size = 3) +
+  scale_fill_manual(values = c( "grey99", "red1","mediumblue")) +
+  theme_bw() + 
+  theme(legend.position = "none") 
+
+## TTR significant in correlation
+cor.test(d.clean$TTR.LDT, d.clean$mean.aoa)
+```
+
+Predicted relationship with AOA number of consonants (TTR has reliable correlation, but not significant in lmer)
+
+### AOA misc. morphosyntactic features
+
+#### AOA and word order
 ```{r}
 d.clean = ld %>%
   select(ISO, DRYSOV) %>%
@@ -1127,34 +1332,57 @@ d.clean %>%
                   position=position_dodge(.9)) +
   theme_bw()
 ```
+
 Too small of a sample to see differences across categories.
 
-### AOA and isolating vs. concatenating
+#### AOA and isolating vs. concatenating
 ```{r}
+d.clean = ld %>%
+  select(ISO, BICFUS) %>%
+  rename(affix.type = BICFUS) %>%
+  left_join(d.clean, by="ISO") %>%
+  mutate(affix.type = as.factor(affix.type))
+summary(d.clean$affix.type)
+old = 1:7
+new = new = c("concatenative", "isolating", "tonal",
+              "isolating", "concatenative", "concatenative", "both")
+
+d.clean$affix.type = mapvalues(d.clean$affix.type, 
+                         from = as.character(old),
+                         to = as.character(new))
+
+d.clean %>%
+ filter(!is.na(mean.aoa), !is.na(affix.type)) %>%
+  group_by(ISO) %>%
+  summarise(n = n(),
+            affix.type = affix.type[1]) 
+```
+All are concatenative that we have data for (n = 9 for AOA ^ WALS). Can't do this analysis.
+
+#### AOA and prefixing vs. suffixing
+```{r}
+d.clean = ld %>%
+  select(ISO, DRYPRE) %>%
+  rename(preVsuf = DRYPRE) %>%
+  left_join(d.clean, by="ISO") %>%
+  mutate(preVsuf = as.factor(preVsuf))
+summary(d.clean$preVsuf)
+old = 1:6
+new = c("none", "suffix", "suffix",
+              "prefix", "prefix", "prefix")
+
+d.clean$preVsuf = mapvalues(d.clean$preVsuf, 
+                         from = as.character(old),
+                         to = as.character(new))
+
+d.clean %>%
+ filter(!is.na(mean.aoa), !is.na(preVsuf)) %>%
+  group_by(ISO) %>%
+  summarise(n = n(),
+            affix.type = preVsuf[1]) %>%
+  select(-n) %>%
+  summary()
 ```
 
-### AOA and prefixing vs. suffixing
-```{r}
-```
+All but two are suffixing. Can't do this analysis either.
 
-## Replicate Lupyan and Dale (2010) complexity score plot (Fig. 3)
-```{r Lupyan and Dale complexity plot}
-ld.demo.qual %>%
-  mutate(morphological.complexity.factor =
-           as.factor(morphological.complexity)) %>%
-  group_by(morphological.complexity.factor) %>%
-  multi_boot(column="pop_log",
-              summary_groups = c("morphological.complexity.factor"),
-              statistics_functions = c("mean", "ci_lower","ci_upper")) %>%
-  mutate(morphological.complexity =  
-           as.numeric(as.character(morphological.complexity.factor))) %>%
-  ggplot() +
-  geom_pointrange(aes(x= morphological.complexity.factor,
-                      y = mean, ymin = ci_lower, ymax = ci_upper)) + 
-  geom_smooth(method = "lm",aes(morphological.complexity-5, mean)) +
-  # theres a weird offset because complexity is a factor?
-  ylab("Log population") + 
-  xlab("Morphological complexity") +
-  ggtitle("Lupyan and Dale (2010) Fig. 3 reproduction") +
-  theme_bw() 
-```
