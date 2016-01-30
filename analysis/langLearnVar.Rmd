@@ -1255,7 +1255,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = mean.aoa)) +
   theme(legend.position = "none") 
 ```
 
-Temperature is positively correlated with AOA, and precipitation is negatively correlated. Children learn words later in hotter places with little variability in preicipitation.
+Temperature is positively correlated with AOA, and precipitation variability is negatively correlated. Children learn words later in hotter places with little variability in preicipitation.
 
 ### AOA and language variables 
 ```{r AOA and language variables, fig.width=10, fig.height = 3}
@@ -1316,8 +1316,20 @@ Predicted relationship with AOA number of consonants (TTR has reliable correlati
 
 #### AOA and PCA
 ```{r}
+tidy(lmer(mean.aoa ~ PC1_L + (PC1_L|lang.family) +
+                 (1|native.country), data=all.pca))
+
+tidy(lmer(mean.aoa ~ PC2_L + (PC2_L|lang.family) +
+                 (1|native.country), data=all.pca))
+
+tidy(lmer(mean.aoa ~ small + (small|lang.family) +
+                 (1|native.country), data=all.pca))
+
+tidy(lmer(mean.aoa ~ hot + (hot|lang.family) +
+                 (1|native.country), data=all.pca))
 
 ```
+AoA not reliably predicted by any of the four PCs.
 
 ### AOA misc. morphosyntactic features
 
