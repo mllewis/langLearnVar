@@ -95,9 +95,8 @@ pca.demo2 = ggplot(pcs.demo.2) +
   xlab('') +
   ylab("component loading")+
 
-facet_env_names <- c(PC1="Hot and rainy", PC2="Large")
+  facet_env_names <- c(PC1="Hot and rainy", PC2="Large")
 facet_lang_names <- c(PC1="Complex",PC2="Short words")
-
 
 pc.demo = ggplot(pcs.demo) +
   geom_bar(aes(x = variable, y = value, fill = variable), stat="identity") +
