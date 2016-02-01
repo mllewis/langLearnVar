@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.7.16)  31 JAN 2016 17:53
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (TeX Live 2015) (preloaded format=pdflatex 2015.7.16)  1 FEB 2016 12:14
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -283,12 +283,12 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 38.
 
-<figs/timescales_table.png, id=1, 687.56876pt x 449.68pt>
+<figs/timescales_table.png, id=1, 696.6025pt x 330.23375pt>
 File: figs/timescales_table.png Graphic file (type png)
 
 <use figs/timescales_table.png>
 Package pdftex.def Info: figs/timescales_table.png used on input line 45.
-(pdftex.def)             Requested size: 240.65266pt x 157.39035pt.
+(pdftex.def)             Requested size: 243.81453pt x 115.58353pt.
  [1{/usr/local/texlive/2015/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
@@ -300,6 +300,9 @@ File: figs/plot1.pdf Graphic file (type pdf)
 Package pdftex.def Info: figs/plot1.pdf used on input line 97.
 (pdftex.def)             Requested size: 494.33194pt x 384.4804pt.
 
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
 <figs/plot2.pdf, id=14, 1300.86pt x 867.24pt>
 File: figs/plot2.pdf Graphic file (type pdf)
  <use figs/plot2.pdf>
@@ -310,49 +313,75 @@ LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
 (Font)              Font shape `OT1/ptm/b/n' tried instead on input line 129.
  [2]
-Underfull \hbox (badness 10000) in paragraph at lines 144--144
+Underfull \hbox (badness 10000) in paragraph at lines 143--143
 [][]\OT1/ptm/m/n/9 All code and data for the pa-per are avail-able at
  []
 
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
-LaTeX Font Info:    Try loading font information for OMS+pcr on input line 147.
-
+LaTeX Font Info:    Try loading font information for OMS+pcr on input line 146.
 
 (/usr/local/texlive/2015/texmf-dist/tex/latex/psnfss/omspcr.fd
 File: omspcr.fd 
 )
 LaTeX Font Info:    Font shape `OMS/pcr/m/n' in size <9> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 147.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 146.
 
-Underfull \hbox (badness 10000) in paragraph at lines 147--147
+Underfull \hbox (badness 10000) in paragraph at lines 146--146
 [][]\OT1/ptm/m/n/9 The model spec-i-fi-ca-tion was as fol-lows:
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 147--147
+Underfull \hbox (badness 10000) in paragraph at lines 146--146
 \OT1/pcr/m/n/9 language.variable $\OMS/pzccm/m/n/9 ^^X$ \OT1/pcr/m/n/9 environm
 ental.variable +
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 147--147
+Underfull \hbox (badness 10000) in paragraph at lines 146--146
 \OT1/pcr/m/n/9 (environmental.variable \OMS/cmsy/m/n/9 j \OT1/pcr/m/n/9 languag
 e.family) +
  []
 
-[3 <./figs/plot1.pdf>] [4 <./figs/plot2.pdf>]
-Underfull \hbox (badness 4872) in paragraph at lines 162--163
+[3 <./figs/plot1.pdf>]
+Underfull \hbox (badness 1442) in paragraph at lines 152--153
+\OT1/ptm/m/n/10 In the main anal-y-sis, we fit mixed ef-fect mod-els pre-
+ []
+
+
+Underfull \hbox (badness 1320) in paragraph at lines 152--153
+\OT1/ptm/m/n/10 dict-ing each lan-guage vari-able with each en-vi-ron-men-tal
+ []
+
+
+Underfull \hbox (badness 1817) in paragraph at lines 152--153
+\OT1/ptm/m/n/10 in Fig. 2. For each lan-guage vari-able, there was at
+ []
+
+
+Underfull \hbox (badness 2073) in paragraph at lines 152--153
+\OT1/ptm/m/n/10 least one en-vi-ron-men-tal vari-able that re-li-ably co-var-ie
+d,
+ []
+
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [4 <./figs/plot2.pdf>]
+Underfull \hbox (badness 4872) in paragraph at lines 161--162
 \OT1/ptm/m/n/10 These two anal-y-ses sug-gest that more com-plex lan-
  []
 
 
-Underfull \hbox (badness 3128) in paragraph at lines 162--163
+Underfull \hbox (badness 3128) in paragraph at lines 161--162
 \OT1/ptm/m/n/10 we find this re-la-tion-ship across a range of lin-guis-tic
  []
 
-[5] (./langLearnVar_cogsci2016.bbl) [6] (./langLearnVar_cogsci2016.aux)
+[5] (./langLearnVar_cogsci2016.bbl
+Underfull \vbox (badness 1043) has occurred while \output is active []
+
+ [6])
+[7
+
+] (./langLearnVar_cogsci2016.aux)
 
 LaTeX Warning: There were multiply-defined labels.
 
@@ -364,7 +393,7 @@ Here is how much of TeX's memory you used:
  6408 multiletter control sequences out of 15000+600000
  40839 words of font info for 81 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,11n,35p,1205b,258s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,11n,35p,1236b,258s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2015/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
 exlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/te
 xlive/2015/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texl
@@ -375,10 +404,10 @@ xmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2015/texmf-dist/fo
 nts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/
 urw/times/utmr8a.pfb></usr/local/texlive/2015/texmf-dist/fonts/type1/urw/times/
 utmri8a.pfb>
-Output written on langLearnVar_cogsci2016.pdf (6 pages, 712666 bytes).
+Output written on langLearnVar_cogsci2016.pdf (7 pages, 677942 bytes).
 PDF statistics:
- 135 PDF objects out of 1000 (max. 8388607)
- 83 compressed objects within 1 object stream
+ 140 PDF objects out of 1000 (max. 8388607)
+ 87 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  16 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -29,7 +29,7 @@ library(grid)
 library(gridExtra)
 library(ggrepel)
 
-opts_chunk$set(cache = T, warning = F, message = F)
+opts_chunk$set(cache = F, warning = F, message = F)
 
 mapTheme = theme(plot.background = element_blank(),
     panel.grid.major = element_blank(),
@@ -212,8 +212,7 @@ ld.c = read.table("../data/lupyan_2010_complexity.txt", fill = T,
          morphological.complexity.ld.centered = complexityCentered) %>%
   select(morphological.complexity.ld, propPresent, ISO)
 
-ld.c$adjusted.complexity = ld.c$morphological.complexity.ld * ld.c$propPresent
-
+ld.c$adjusted.complexity = ld.c$morphological.complexity.ld / ld.c$propPresent
 ```
 
 Bentz, et al. (2015): L2 learners and lexical diversity.Note here that we are only looking at languages from the UDHR corpus. The other corpora have smaller languages only.
@@ -379,7 +378,8 @@ d = read.csv("../data/langLearnVar_data.csv")[,-1]
 Remove outliers and check for normality
 ```{r clean data, fig.width = 15, fig.height = 10}
 d.clean = d %>%
-  mutate_each(funs(removeOutlier(.,N_EXCLUDE_SDS)), c(-ISO, -lang.family, 
+  mutate_each(funs(removeOutlier(.,N_EXCLUDE_SDS)), c(-ISO,
+                                                      -lang.family, 
               -native.country, -native.country.area, 
          -lang.genus, -language, -stock, -region))
 
@@ -541,7 +541,7 @@ d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
 
 # reorder factor levels for facet plots below (affects order in other dfs)
 d.scatter.fam$lang_measure <- factor(d.scatter.fam$lang_measure,
-                                    levels = c("adjusted.complexity", "morphological.complexity",
+                                    levels = c("adjusted.complexity", 
                                              "p.complexity.bias", "TTR.LDT",
                                              "mean.length", "n.consonants_log", 
                                              "n.vowels_log"))
@@ -591,7 +591,7 @@ facet_pop_names <- c(
 
 facet_lang_names <- c(
   morphological.complexity="Morphosyntactic \nComplexity",
-  adjusted.complextity = "Adjusted Complexity",
+  adjusted.complexity = "Adjusted \nComplexity",
   TTR.LDT="Lexical \nDiversity",
   p.complexity.bias="Complexity \nBias",
   mean.length="Word \nLength",
@@ -709,7 +709,7 @@ names(d.pca.demo)[names(d.pca.demo) == "PC2"] = "small"
 ```
 
 Maps of principle components for demographic variable by language
-```{r principle components by language (maps), fig.height = 4, fig.width = 8}
+```{r principle components by language (maps), fig.height = 4, fig.width = 8, eval = F}
 ggplot(d.pca.demo) +   
   borders("world", colour="gray50", fill="gray50") +
   geom_point(aes(x = lon, y=lat, 
@@ -895,7 +895,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
               size = 1, color = "green") +
   facet_grid(lang_measure~pop_measure, scales = "free") +
-  scale_fill_manual(values = c("red1", "mediumblue", "grey99")) +
+  scale_fill_manual(values = c("mediumblue", "grey99", "red1")) +
   theme_bw() +
   xlab("Demographic variables") +
   ylab("Language variables") +
@@ -954,7 +954,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_point(size = .3) +
   geom_abline(line.fits, mapping = aes(slope = s, intercept = i), size = 1, color = "green") +
   facet_grid(lang_measure~pop_measure, scales = "free") +
-  scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
+  scale_fill_manual(values = c("grey99", "red1","mediumblue")) +
   theme_bw() +
   xlab("Demographic variables") +
   ylab("Language variables") +
