@@ -1,16 +1,11 @@
 library(ggvis)
 library(rworldmap)
-
-# For dropdown menu
-actionLink <- function(inputId, ...) {
-  tags$a(href='javascript:void',
-         id=inputId,
-         class='action-button',
-         ...)
-}
+library(tidyr)
+library(ggplot2)
+library(lme4)
 
 shinyUI(fluidPage(
-  titlePanel("Environmental and Language Variables"),
+  titlePanel("Ling. Niche Hypothesis Aggregated Dataset"),
   fluidRow(
     column(6,
       wellPanel(
@@ -34,6 +29,7 @@ shinyUI(fluidPage(
     ),
     column(6, 
       ggvisOutput("scatterPlot")
+      #verbatimTextOutput("summary")
     )
   )
 ))

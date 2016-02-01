@@ -29,7 +29,7 @@ library(grid)
 library(gridExtra)
 library(ggrepel)
 
-opts_chunk$set(cache = F, warning = F, message = F)
+opts_chunk$set(cache = T, warning = F, message = F)
 
 mapTheme = theme(plot.background = element_blank(),
     panel.grid.major = element_blank(),
@@ -203,6 +203,19 @@ ld.complexity = qual %>%
 ld.demo.qual = left_join(ld.demo, ld.complexity)
 ```
 
+```{r}
+ld.c = read.table("../data/lupyan_2010_complexity.txt", fill = T, 
+                  header = T, sep = "\t", na.strings = "*") %>%
+  mutate(lang = tolower(lang)) %>%
+  left_join(codes, c("lang" = "language")) %>%
+  rename(morphological.complexity.ld = complexity,
+         morphological.complexity.ld.centered = complexityCentered) %>%
+  select(morphological.complexity.ld, propPresent, ISO)
+
+ld.c$adjusted.complexity = ld.c$morphological.complexity.ld * ld.c$propPresent
+
+```
+
 Bentz, et al. (2015): L2 learners and lexical diversity.Note here that we are only looking at languages from the UDHR corpus. The other corpora have smaller languages only.
 ```{r, eval = F}
 bentz = read.csv("../data/bentz_2015.csv") %>%
@@ -343,6 +356,7 @@ aoa = aoa.raw %>%
 Merge data frames together by ISO
 ```{r merge data, eval = F}
 d = full_join(ld.demo.qual, cb, by = "ISO") %>%
+  full_join(ld.c, by = "ISO") %>%
   full_join(bentz, by = "ISO") %>%
   full_join(phoneme, by = "ISO") %>%
   full_join(ml, by = "ISO") %>%
@@ -413,7 +427,7 @@ is.na(d.clean) <- sapply(d.clean, is.infinite)
 normality.test = d.clean %>%
   summarise_each(funs(unlist(tidy(shapiro.test(.))[2])),
                  c(-ISO, -lang.family, -native.country,
-                   -native.country.area,
+                   -native.country.area, 
                      -lang.genus, -language, -stock, -region)) %>%
   gather(variable, shapiro.p.value) %>%
   mutate(normal = ifelse(shapiro.p.value > .05, TRUE, FALSE)) %>%
@@ -506,14 +520,14 @@ demo_vars_crit = c("n.neighbors_log",
 lang_vars_crit = c("p.complexity.bias","TTR.LDT",
                    "mean.dependency.length", "mean.length",
                    "n.consonants_log", "n.vowels_log",
-                   "morphological.complexity")
+                   "adjusted.complexity", "adjusted.complexity")
 
 d.scatter.fam = d.clean %>% 
   select(pop_log, ratio.L2.L1_log,
          n.neighbors_log, area_log, mean.temp, sd.temp, sum.precip,
-         sd.precip_log, morphological.complexity,TTR.LDT, p.complexity.bias,
+         sd.precip_log,adjusted.complexity, TTR.LDT,p.complexity.bias,
          mean.length, n.consonants_log, n.vowels_log,
-         lang.family, native.country) %>%
+         lang.family, native.country, adjusted.complexity) %>%
   gather(lang_measure, lang_value,
          which(is.element(names(.), lang_vars_crit))) %>%
   group_by(lang_measure) %>%
@@ -527,9 +541,9 @@ d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
 
 # reorder factor levels for facet plots below (affects order in other dfs)
 d.scatter.fam$lang_measure <- factor(d.scatter.fam$lang_measure,
-                                    levels = c("morphological.complexity",
+                                    levels = c("adjusted.complexity", "morphological.complexity",
                                              "p.complexity.bias", "TTR.LDT",
-                                             "mean.length", "n.consonants_log",
+                                             "mean.length", "n.consonants_log", 
                                              "n.vowels_log"))
 
 d.scatter.fam$pop_measure <- factor(d.scatter.fam$pop_measure,
@@ -542,7 +556,8 @@ d.scatter.fam$pop_measure <- factor(d.scatter.fam$pop_measure,
 d.model.fits = d.scatter.fam %>%
   group_by(lang_measure, pop_measure) %>%
   do(tidy(lmer(lang_value ~ pop_value + (pop_value|lang.family) +
-                 (1|native.country), data=.))) 
+                 (1|native.country), data=., 
+               control=lmerControl(optimizer = "bobyqa")))) 
 
 line.fits = d.model.fits %>%
         filter(term == "pop_value" | term == "(Intercept)") %>%
@@ -576,6 +591,7 @@ facet_pop_names <- c(
 
 facet_lang_names <- c(
   morphological.complexity="Morphosyntactic \nComplexity",
+  adjusted.complextity = "Adjusted Complexity",
   TTR.LDT="Lexical \nDiversity",
   p.complexity.bias="Complexity \nBias",
   mean.length="Word \nLength",
@@ -584,7 +600,7 @@ facet_lang_names <- c(
 )
 ```
 
-```{r, eval = F}
+```{r, eval = T}
 #pdf("../papers/cogsci2016/figs/plot1.pdf", width = 18, height = 14)
 ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   facet_grid(lang_measure ~ pop_measure, 
@@ -715,15 +731,15 @@ Model fits using demographic PCA with all language variables
 ```{r model fits with PCA for demo, fig.width=8, fig.height = 10}
 demo_vars_crit2 = c("hot", "small")
 
-lang_vars_crit2 = c("morphological.complexity",
+lang_vars_crit2 = c("adjusted.complexity",
                     "p.complexity.bias","TTR.LDT",
                     "mean.length", "mean.aoa",
                     "n.consonants_log", "n.vowels_log")
 
 d.scatter.fam = d.pca.demo %>% 
   select(n.consonants_log, n.vowels_log, 
-         mean.length, p.complexity.bias, TTR.LDT,
-         morphological.complexity,
+         mean.length, p.complexity.bias,TTR.LDT,
+         adjusted.complexity,
          lang.family, native.country, small, hot) %>%
   gather(lang_measure, lang_value, 
          which(is.element(names(.), lang_vars_crit2))) %>%
@@ -741,7 +757,7 @@ d.model.fits = d.scatter.fam %>%
   do(tidy(lmer(lang_value ~ pop_value + 
                  (pop_value|lang.family) + 
                  (1|native.country),
-               data=.)))
+               data=., control=lmerControl(optimizer = "bobyqa"))))
 
 line.fits = d.model.fits %>%
           filter(term == "pop_value" | term == "(Intercept)") %>%
@@ -777,7 +793,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
 prep by looking at correlations
 ```{r}
 d.lang =  d.clean %>%
-  select(morphological.complexity, scaled.LDT.H, 
+  select(adjusted.complexity, scaled.LDT.H, 
          mean.length, n.consonants_log, n.vowels_log) 
 is.na(d.lang) <- sapply(d.lang, is.infinite) 
 
@@ -797,7 +813,7 @@ barplot(pca.lang$sdev/pca.lang$sdev[1])
 fviz_eig(pca.lang, addlabels = TRUE, 
                linecolor ="red", geom = "line") +
   theme_bw()
-pca.lang = prcomp(na.omit(d.lang), scale = TRUE, tol = .7)
+pca.lang = prcomp(na.omit(d.lang), scale = TRUE, tol = .8)
 
 # plot loadings
 pcs.lang <- cbind(names(d.lang),
@@ -854,7 +870,7 @@ d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
 d.model.fits = d.scatter.fam %>%
   group_by(lang_measure, pop_measure) %>%
   do(tidy(lmer(lang_value ~ pop_value +
-                 (1|native.country), data=.))) 
+                 (1|native.country), data=., control=lmerControl(optimizer = "bobyqa")))) 
 
 line.fits = d.model.fits %>%
           filter(term == "pop_value" | term == "(Intercept)") %>%
@@ -879,7 +895,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
   geom_abline(line.fits, mapping = aes(slope = s, intercept = i), 
               size = 1, color = "green") +
   facet_grid(lang_measure~pop_measure, scales = "free") +
-  scale_fill_manual(values = c( "mediumblue", "grey99","red1")) +
+  scale_fill_manual(values = c("red1", "mediumblue", "grey99")) +
   theme_bw() +
   xlab("Demographic variables") +
   ylab("Language variables") +
@@ -913,7 +929,8 @@ d.scatter.fam <- filter(d.scatter.fam, !is.na(pop_value),
 d.model.fits = d.scatter.fam %>%
   group_by(lang_measure, pop_measure) %>%
   do(tidy(lmer(lang_value ~ pop_value + (pop_value|lang.family) +
-                 (1|native.country), data=.))) 
+                 (1|native.country), data=., 
+               control=lmerControl(optimizer = "bobyqa")))) 
 
 line.fits = d.model.fits %>%
           filter(term == "pop_value" | term == "(Intercept)") %>%
@@ -1033,7 +1050,8 @@ p1
 SIZE = 1.6
 FONT_SIZE = 20
 pc.demo.legend = ggplot(pcs.demo) +
-  geom_bar(aes(x = variable, y = value, fill = variable), stat = "identity") +
+  geom_bar(aes(x = variable, y = value, fill = variable),
+           stat = "identity") +
   scale_fill_brewer(guide = guide_legend(title = NULL, reverse = T, 
                                          keywidth = SIZE, keyheight = SIZE),
                                          palette="YlOrRd") +
@@ -1223,7 +1241,7 @@ d.scatter.fam = d.clean %>%
 d.model.fits = d.scatter.fam %>%
   group_by(pop_measure) %>%
   do(tidy(lmer(mean.aoa ~ pop_value + (pop_value|lang.family) +
-                 (1|native.country), data=.))) 
+                 (1|native.country), data=., control=lmerControl(optimizer = "bobyqa")))) 
 
 line.fits = d.model.fits %>%
         filter(term == "pop_value" | term == "(Intercept)") %>%
@@ -1262,14 +1280,14 @@ Temperature is positively correlated with AOA, and precipitation variability is 
 lang_vars_crit = c("p.complexity.bias","TTR.LDT",
                    "mean.dependency.length", "mean.length",
                    "n.consonants_log", "n.vowels_log",
-                   "morphological.complexity")
+                   "adjusted.complexity")
 
 d.scatter.fam = d.clean %>% 
-  filter(language != "xhosa") %>% # an outlier
-  select(p.complexity.bias,TTR.LDT,
+  #filter(language != "xhosa") %>% # an outlier
+  select(p.complexity.bias,
                    mean.dependency.length, mean.length,
                    n.consonants_log, n.vowels_log,
-                   morphological.complexity, mean.aoa, 
+                   adjusted.complexity, mean.aoa, 
                    lang.family, native.country, language) %>%
   gather(lang_measure, lang_value,
          which(is.element(names(.), lang_vars_crit)))
@@ -1278,7 +1296,8 @@ d.scatter.fam = d.clean %>%
 d.model.fits = d.scatter.fam %>%
   group_by(lang_measure) %>%
   do(tidy(lmer(mean.aoa ~ lang_value + (lang_value|lang.family) +
-                 (1|native.country), data=.))) 
+                 (1|native.country), data=., 
+               control=lmerControl(optimizer = "bobyqa")))) 
 
 line.fits = d.model.fits %>%
         filter(term == "lang_value" | term == "(Intercept)") %>%
@@ -1317,17 +1336,20 @@ Predicted relationship with AOA number of consonants (TTR has reliable correlati
 #### AOA and PCA
 ```{r}
 tidy(lmer(mean.aoa ~ PC1_L + (PC1_L|lang.family) +
-                 (1|native.country), data=all.pca))
+                 (1|native.country), data=all.pca,
+          control=lmerControl(optimizer = "bobyqa")))
 
 tidy(lmer(mean.aoa ~ PC2_L + (PC2_L|lang.family) +
-                 (1|native.country), data=all.pca))
+                 (1|native.country), data=all.pca,
+          control=lmerControl(optimizer = "bobyqa")))
 
 tidy(lmer(mean.aoa ~ small + (small|lang.family) +
-                 (1|native.country), data=all.pca))
+                 (1|native.country), data=all.pca,
+          control=lmerControl(optimizer = "bobyqa")))
 
 tidy(lmer(mean.aoa ~ hot + (hot|lang.family) +
-                 (1|native.country), data=all.pca))
-
+                 (1|native.country), data=all.pca,
+          control=lmerControl(optimizer = "bobyqa")))
 ```
 AoA not reliably predicted by any of the four PCs.
 
