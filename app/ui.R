@@ -39,7 +39,7 @@ shinyUI(fluidPage(
     ),
     column(6, 
     tabsetPanel(
-      tabPanel("Predictions Plot",
+      tabPanel("Plot",
                  br(),
                  h4(""),
                  div(style = "height: 300px;",                   
@@ -55,10 +55,10 @@ shinyUI(fluidPage(
       
       tabPanel("Language Summary",
                br(), 
-               h4("Geographical distribution of languages"),                  
-               plotOutput("mapPlot"),
                h4("Number of languages:", textOutput("n_languages", inline = TRUE)),
-               h4("Number of families:", textOutput("n_families", inline = TRUE))
+               h4("Number of families:", textOutput("n_families", inline = TRUE)),
+               h4("Geographical distribution of languages:"),                  
+               plotOutput("mapPlot")
               )
         )
       )
