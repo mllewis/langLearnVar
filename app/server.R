@@ -82,18 +82,17 @@ shinyServer(function(input, output, session) {
     if (is.null(x)) return(NULL)
     if (is.null(x$language)) return(NULL)
     
-    # Pick out the language with this ID
+    # pick out the language with this ID
     all_d <- isolate(d.sub())
     lang <- all_d[all_d$language == x$language, ]
     lang = lang %>% 
             filter(!is.na(language)) %>%
-          slice(1)
+           slice(1)
 
     paste0("<b>", capitalize(lang$language), "</b><br>",
            lang$lang.family, "<br>",
            lang$native.country)
   }
-  
   
   # scatter plot
   vis <- reactive({
@@ -102,7 +101,6 @@ shinyServer(function(input, output, session) {
     yvar_name <- names(axis_vars)[axis_vars == input$yvar]
     xvar <- prop("x", as.symbol(input$xvar))
     yvar <- prop("y", as.symbol(input$yvar))
-    
     
     d.sub() %>%
       ggvis(x = xvar, y = yvar) %>%

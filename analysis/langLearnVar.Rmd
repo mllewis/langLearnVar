@@ -74,7 +74,7 @@ CORR_THRESHOLD = .8
     + morpholigical complexity (morphological.complexity)
  * Bentz, et al. (2015): L2 learners and lexical diversity
     + number of first language speakers (n.L1.speakers)
-    + number of second language speakers (n.L2.pseakers)
+    + number of second language speakers (n.L2.speakers)
     + ratio of L2 to L1 (ratio.L2.L1)
     + parameters of Zipf-Mandelbrot’s law for lexical diversity (scaled.LDT.ZM)
     + Shannon entropy of lexical diversity (scaled.LDT.H)
@@ -325,7 +325,8 @@ ml.raw = ml.raw %>%
 
 ml = ml.raw %>%
   group_by(ISO) %>%
-  summarize(mean.length = mean(nchar, na.rm = T)) %>%
+  summarize(mean.length = mean(nchar, na.rm = T),
+            sd.length = sd(nchar, na.rm = T)) %>%
   filter(ISO != "")
 
 #more_ISOs = ml.raw %>%
@@ -525,7 +526,7 @@ lang_vars_crit = c("p.complexity.bias","TTR.LDT",
 d.scatter.fam = d.clean %>% 
   select(pop_log, ratio.L2.L1_log,
          n.neighbors_log, area_log, mean.temp, sd.temp, sum.precip,
-         sd.precip_log,adjusted.complexity, TTR.LDT,p.complexity.bias,
+         sd.precip_log,adjusted.complexity, TTR.LDT, p.complexity.bias,
          mean.length, n.consonants_log, n.vowels_log,
          lang.family, native.country, adjusted.complexity) %>%
   gather(lang_measure, lang_value,
@@ -731,7 +732,7 @@ Model fits using demographic PCA with all language variables
 ```{r model fits with PCA for demo, fig.width=8, fig.height = 10}
 demo_vars_crit2 = c("hot", "small")
 
-lang_vars_crit2 = c("adjusted.complexity",
+lang_vars_crit2 = c("morphological.complexity",
                     "p.complexity.bias","TTR.LDT",
                     "mean.length", "mean.aoa",
                     "n.consonants_log", "n.vowels_log")
@@ -739,7 +740,7 @@ lang_vars_crit2 = c("adjusted.complexity",
 d.scatter.fam = d.pca.demo %>% 
   select(n.consonants_log, n.vowels_log, 
          mean.length, p.complexity.bias,TTR.LDT,
-         adjusted.complexity,
+         morphological.complexity,
          lang.family, native.country, small, hot) %>%
   gather(lang_measure, lang_value, 
          which(is.element(names(.), lang_vars_crit2))) %>%
@@ -793,7 +794,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
 prep by looking at correlations
 ```{r}
 d.lang =  d.clean %>%
-  select(adjusted.complexity, scaled.LDT.H, 
+  select(morphological.complexity, scaled.LDT.H, 
          mean.length, n.consonants_log, n.vowels_log) 
 is.na(d.lang) <- sapply(d.lang, is.infinite) 
 
@@ -1280,14 +1281,14 @@ Temperature is positively correlated with AOA, and precipitation variability is 
 lang_vars_crit = c("p.complexity.bias","TTR.LDT",
                    "mean.dependency.length", "mean.length",
                    "n.consonants_log", "n.vowels_log",
-                   "adjusted.complexity")
+                   "morphological.complexity")
 
 d.scatter.fam = d.clean %>% 
   #filter(language != "xhosa") %>% # an outlier
   select(p.complexity.bias,
                    mean.dependency.length, mean.length,
                    n.consonants_log, n.vowels_log,
-                   adjusted.complexity, mean.aoa, 
+                   morphological.complexity, mean.aoa, 
                    lang.family, native.country, language) %>%
   gather(lang_measure, lang_value,
          which(is.element(names(.), lang_vars_crit)))

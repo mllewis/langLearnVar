@@ -113,11 +113,17 @@ variables with missing data included, which means a count reflects a zero for mi
 ld.c = read.table("../data/lupyan_2010_complexity.txt", fill = T, 
                   header = T, sep = "\t", na.strings = "*") %>%
   mutate(lang = tolower(lang)) %>%
-  filter(missing == 0) %>%
   left_join(codes, c("lang" = "language")) %>%
   rename(morphological.complexity.ld = complexity,
          morphological.complexity.ld.centered = complexityCentered) %>%
   select(morphological.complexity.ld, morphological.complexity.ld.centered, ISO, lang)
+
+ld.c$adjusted.complexity = ld.c$morphological.complexity.ld * ld.c$propPresent
+
+d.clean = d.clean %>%
+            left_join(ld.c, by = "ISO")
+
+
 
 m = ld.c %>%
   mutate(missing = as.factor(missing)) %>%

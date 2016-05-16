@@ -12,7 +12,7 @@ shinyUI(fluidPage(
   p("Explore an aggregation of datasets that test relationships between features of the environment and elements of language.
     This browser is supplemental material to",
     a("Lewis and Frank (under review, CogSci 2016).", 
-      href = "hhttps://langcog.stanford.edu/papers_new/lewis-2016-underrev.pdf", target = "_blank")),
+      href = "https://langcog.stanford.edu/papers_new/lewis-2016-underrev.pdf", target = "_blank")),
   br(),
   
   fluidRow(
@@ -59,7 +59,11 @@ shinyUI(fluidPage(
                h4("Number of families:", textOutput("n_families", inline = TRUE)),
                h4("Geographical distribution of languages:"),                  
                plotOutput("mapPlot")
-              )
+          )
+      #,tabPanel("Data Source",
+        #       br(),
+       #        h4("Number of langua")
+       #   )
         )
       )
     )
