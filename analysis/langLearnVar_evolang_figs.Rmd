@@ -1,0 +1,219 @@
+---
+title: Language learnability variability - figs for evolang talk
+author: "Molly Lewis"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    number_sections: true
+    theme: cerulean
+---
+  
+***
+***
+
+```{r setup, echo = F, warning = F, message = F}
+rm(list = ls())
+
+library(knitr)
+library(ggplot2)
+library(langcog)
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(broom)
+library(lme4)
+library(rworldmap)
+library(factoextra)
+library(grid)
+library(gridExtra)
+library(ggrepel)
+
+opts_chunk$set(cache = F, warning = F, message = F)
+
+mapTheme = theme(plot.background = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_blank(), 
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text = element_blank())
+
+themeML =  theme(text = element_text(size=20),
+                 axis.text.x = element_text(vjust=.7), 
+                 axis.ticks = element_line(size = 1), 
+                 plot.background = element_blank(),
+                 panel.grid.major = element_blank(),
+                 panel.grid.minor = element_blank(),
+                 panel.border = element_blank(),
+                 panel.background = element_blank(),
+                 axis.line = element_line(color = 'black', size = 1.1))
+
+removeOutlier <- function(dataCol, num_deviations) {
+  boolean.outlier = abs(dataCol) > mean(dataCol, na.rm = T) +
+                    (num_deviations*sd(dataCol, na.rm = T))
+  df = bind_cols(as.data.frame(boolean.outlier),
+                 as.data.frame(dataCol))
+  cleaned.dataCol = ifelse(df$boolean.outlier, NA, df$dataCol)
+  cleaned.dataCol
+}
+
+most.frequent.level = function (x){
+    mf = names(which.max(table(x)))
+    return(mf)
+}
+
+N_EXCLUDE_SDS = 10
+CORR_THRESHOLD = .8
+```
+
+load data
+```{r}
+# write.csv(d, "../data/langLearnVar_data.csv")
+d = read.csv("../data/langLearnVar_data.csv")[,-1]
+```
+
+## Clean data
+Remove outliers and check for normality
+```{r clean data, fig.width = 15, fig.height = 10}
+d.clean = d %>%
+  mutate_each(funs(removeOutlier(.,N_EXCLUDE_SDS)), c(-ISO,
+                                                      -lang.family, 
+              -native.country, -native.country.area, 
+         -lang.genus, -language, -stock, -region))
+```
+
+The following variables look right-skewed. 
+```{r}
+NN_vars = c("area", "perimeter", "n.neighbors", "sd.precip",
+           "ratio.L2.L1", "n.L1.speakers", "n.L2.speakers",
+           "n.phonemes", "n.consonants","n.vowels", "n.sonorants",
+           "n.obstruents", "n.monophthongs", "n.qual.monophthongs",
+           "n.tones")
+```
+
+Take the log of these variables, and check for normality again.
+```{r, fig.width = 15, fig.height = 10}
+d.clean = d.clean %>%
+  mutate_each(funs(log = log(.), dummy =  sum(.)),
+              one_of(NN_vars)) %>%
+  select(-contains("dummy")) %>%
+  select(-one_of(NN_vars))
+```
+
+Lang Family centroid map
+```{r}
+fam.center = d.clean %>%
+  select(complexity.bias, pop_log, lon, lat, lang.family) %>%
+  filter(!is.na(complexity.bias)) %>%
+  mutate(lang.family = droplevels(lang.family)) %>%
+  group_by(lang.family) %>%
+  summarise(complexity.bias = mean(complexity.bias,
+                                   na.rm = T),
+            mean.lon = mean(lon, na.rm = T),
+            mean.lat = mean(lat, na.rm = T))
+  
+fam.center %>%
+      ggplot() +   
+      borders("world", colour="gray60", fill="gray60") +
+      geom_point(aes(x = mean.lon, y = mean.lat, 
+                     color = complexity.bias), size = 7) +
+    scale_colour_gradient(limits=c(0, .54), 
+                          high="red", low = "white",
+                         name = "Complexity bias\n (Pearson's r) ") +
+    mapTheme +
+    theme(axis.title = element_blank(),
+        axis.text = element_blank(), 
+        axis.ticks = element_blank(),
+        title = element_text(size = 15),
+        legend.text = element_text(size = 15))  +
+   theme(legend.position="none")
+     #theme(legend.position="bottom", legend.title=element_blank())
+```
+
+Complexity bias and population plot
+```{r}
+ # model
+params = tidy(lmer(complexity.bias ~ pop_log + (pop_log|lang.family) +
+                 (1|native.country), data=d.clean, 
+               control=lmerControl(optimizer = "bobyqa")))
+
+cor.test(d.clean$complexity.bias,d.clean$pop_log)
+
+line.params = params %>%
+      filter(term == "pop_log" | term == "(Intercept)") %>%
+      select(term, estimate) %>%
+      spread(term, estimate) %>%
+      rename_(m = "pop_log") %>%
+      rename(b = `(Intercept)`)
+
+# plot
+ggplot(d.clean, 
+         aes(y = complexity.bias, x = pop_log)) +
+  geom_point(aes(color = lang.family), size = 4, alpha = .8) +
+  geom_abline(intercept = line.params$b, slope = line.params$m, 
+              color = "black", size = 2) +
+  ylab("Complexity Bias \n (Pearson's r)" ) +
+  xlab("Log Population (million)") +
+  xlim(4.6,8) +
+  themeML +
+  theme(legend.position="none") 
+```
+
+# violin plot
+```{r}
+cb.mean = d.violin %>%
+  mutate(all = "all") %>%
+  group_by("all") %>%
+  multi_boot_standard("complexity.bias") 
+
+  ggplot(d.clean, aes(y = complexity.bias, x = 1)) +
+  geom_violin(position = "dodge", fill='grey89') +
+  ylab("Complexity Bias") +
+  themeML+
+  geom_pointrange(data = cb.mean,
+                  aes(y= mean, x = 1, 
+                      ymin = ci_lower,
+                      ymax = ci_upper), 
+                  color = "red", 
+                  size = 1.4)+
+  theme(axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.line.x = element_blank(),
+        axis.text.x = element_blank())
+```
+
+
+# histogram plot
+```{r}
+cb.mean = d.violin %>%
+  mutate(all = "all") %>%
+  group_by("all") %>%
+  multi_boot_standard("complexity.bias") 
+
+  ggplot(d.clean) +
+  geom_density(aes(complexity.bias),
+               position = "dodge", fill='white', linetype = "blank") +
+  xlab("Complexity Bias") +
+  themeML +
+  geom_vline(aes(xintercept = mean), cb.mean, color = "red",
+             linetype = "dashed", 
+             size = 1.7) +
+  #geom_point(data = cb.mean,
+  #                aes(x = mean, y = 1), 
+  #                color = "red", 
+  #                size = 4) +
+  #
+  #geom_errorbarh(aes(xmax = ci_upper, xmin = ci_lower, y = 1, x = mean), 
+  #               data =  cb.mean, color = "red", height = 0, size = 1.7) +
+  coord_flip() +
+  theme(axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.line.x = element_blank(),
+        axis.text.x = element_blank())
+```
+
+
+

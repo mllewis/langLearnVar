@@ -1,0 +1,127 @@
+WALS.feature.name,WALS.feature.num,long.feature.name,WALS.feature.category,ld.feature.category,ld.level.label,readable.level.label,ld.complexity
+AUWEPI,75,Epistemic Possibility,verbal categories,possibility and evidentials,1,verbal construction,0
+AUWEPI,75,Epistemic Possibility,verbal categories,possibility and evidentials,2,affix,1
+AUWEPI,75,Epistemic Possibility,verbal categories,possibility and evidentials,3,other,1
+AUWIMP,70,The Morphological Imperative,verbal categories,"tense, possession, aspect, mood",1,some,1
+AUWIMP,70,The Morphological Imperative,verbal categories,"tense, possession, aspect, mood",2,some,1
+AUWIMP,70,The Morphological Imperative,verbal categories,"tense, possession, aspect, mood",3,some,1
+AUWIMP,70,The Morphological Imperative,verbal categories,"tense, possession, aspect, mood",4,some,1
+AUWIMP,70,The Morphological Imperative,verbal categories,"tense, possession, aspect, mood",5,none,0
+AUWSEM,76,Overlap between Situational and Epistemic Modal Marking,verbal categories,possibility and evidentials,1,possibility and necessity,1
+AUWSEM,76,Overlap between Situational and Epistemic Modal Marking,verbal categories,possibility and evidentials,2,possibility or necessity,1
+AUWSEM,76,Overlap between Situational and Epistemic Modal Marking,verbal categories,possibility and evidentials,3,none,0
+AUWSIT,74,Situational Possibility,verbal categories,possibility and evidentials,1,The language can express situational possibility with affixes on verbs,1
+AUWSIT,74,Situational Possibility,verbal categories,possibility and evidentials,2,"The language cannot express situational possibility with affixes on verbs, but with verbal constructions",0
+AUWSIT,74,Situational Possibility,verbal categories,possibility and evidentials,3,"The language cannot express situational possibility with affixes on verbs or with verbal constructions, but with other kinds of markers",0
+BAECSY,28,Case Syncretism,morphology,cases,1,Inflectional case marking is absent or minimal,0
+BAECSY,28,Case Syncretism,morphology,cases,2,Inflectional case marking is syncretic for core cases only,1
+BAECSY,28,Case Syncretism,morphology,cases,3,Inflectional case marking is syncretic for core and non-core cases,1
+BAECSY,28,Case Syncretism,morphology,cases,4,Inflectional case marking is never syncretic,1
+BAEPSY,29,Syncretism in Verbal Person/Number Marking,morphology,agreement,1,No subject person/number marking,0
+BAEPSY,29,Syncretism in Verbal Person/Number Marking,morphology,agreement,2,Subject person/number marking is syncretic,1
+BAEPSY,29,Syncretism in Verbal Person/Number Marking,morphology,agreement,3,Subject person/number marking is never syncretic,1
+BAKADP,48,Person Marking on Adpositions,nominal categories,agreement,1,No adpositions,0
+BAKADP,48,Person Marking on Adpositions,nominal categories,agreement,2,Adpositions without person marking,1
+BAKADP,48,Person Marking on Adpositions,nominal categories,agreement,3,Person marking for pronouns only,1
+BAKADP,48,Person Marking on Adpositions,nominal categories,agreement,4,Person marking for pronouns and nouns,1
+BICFUS,20,Fusion of Selected Inflectional Formatives,morphology,morphological type,1,Exclusively concatenative,1
+BICFUS,20,Fusion of Selected Inflectional Formatives,morphology,morphological type,2,Exclusively isolating,0
+BICFUS,20,Fusion of Selected Inflectional Formatives,morphology,morphological type,3,Exclusively tonal,1
+BICFUS,20,Fusion of Selected Inflectional Formatives,morphology,morphological type,4,Tonal/isolating,0
+BICFUS,20,Fusion of Selected Inflectional Formatives,morphology,morphological type,5,Tonal/concatenative,1
+BICFUS,20,Fusion of Selected Inflectional Formatives,morphology,morphological type,6,Ablaut/concatenative,1
+BICFUS,20,Fusion of Selected Inflectional Formatives,morphology,morphological type,7,Isolating/concatenative,1
+BICSYN,22,Inflectional Synthesis of the Verb,morphology,verb morphology,1,0-1 category per word,0
+BICSYN,22,Inflectional Synthesis of the Verb,morphology,verb morphology,2,2-3 category per word,0
+BICSYN,22,Inflectional Synthesis of the Verb,morphology,verb morphology,3,4-5 category per word,1
+BICSYN,22,Inflectional Synthesis of the Verb,morphology,verb morphology,4,6-7 category per word,1
+BICSYN,22,Inflectional Synthesis of the Verb,morphology,verb morphology,5,8-9 category per word,1
+BICSYN,22,Inflectional Synthesis of the Verb,morphology,verb morphology,6,10-11 categories per wor,1
+BICSYN,22,Inflectional Synthesis of the Verb,morphology,verb morphology,7,12-13 categories per word,1
+COMALN,98,Alignment of Case Marking of Full Noun Phrases,simple clauses,cases,1,netural,0
+COMALN,98,Alignment of Case Marking of Full Noun Phrases,simple clauses,cases,2,Nominative - accusative (standard),1
+COMALN,98,Alignment of Case Marking of Full Noun Phrases,simple clauses,cases,3,Nominative - accusative (marked nominative),1
+COMALN,98,Alignment of Case Marking of Full Noun Phrases,simple clauses,cases,4,Ergative - absolutive,1
+COMALN,98,Alignment of Case Marking of Full Noun Phrases,simple clauses,cases,5,Tripartite,1
+COMALN,98,Alignment of Case Marking of Full Noun Phrases,simple clauses,cases,6,Active - inactive,1
+DAHFUT,67,The Future Tense,verbal categories,"tense, possession, aspect, mood",1,Inflectional marking of future/non-future distinction,1
+DAHFUT,67,The Future Tense,verbal categories,"tense, possession, aspect, mood",2,No inflectional marking of future/non-future distinction,0
+DAHPAS,66,The Past Tense,verbal categories,"tense, possession, aspect, mood",1,Past/non-past distinction marked; no remoteness distinction,1
+DAHPAS,66,The Past Tense,verbal categories,"tense, possession, aspect, mood",2,Past/non-past distinction marked; 2-3 degrees of remoteness distinguished,1
+DAHPAS,66,The Past Tense,verbal categories,"tense, possession, aspect, mood",3,Past/non-past distinction marked; at least 4 degrees of remoteness distinguished,1
+DAHPAS,66,The Past Tense,verbal categories,"tense, possession, aspect, mood",4,No grammatical marking of past/non-past distinction,0
+DAHPFV,65,Perfective/Imperfective Aspect,,"tense, possession, aspect, mood",1,Grammatical marking of perfective/imperfective distinction,1
+DAHPFV,65,Perfective/Imperfective Aspect,,"tense, possession, aspect, mood",2,No grammatical marking of perfective/imperfective distinction,0
+DIEDDD,41,Distance Contrasts in Demonstratives,nominal categories,"articles, demonstratives, pronouns",1,none,0
+DIEDDD,41,Distance Contrasts in Demonstratives,nominal categories,"articles, demonstratives, pronouns",2,2-way,1
+DIEDDD,41,Distance Contrasts in Demonstratives,nominal categories,"articles, demonstratives, pronouns",3,3-way,1
+DIEDDD,41,Distance Contrasts in Demonstratives,nominal categories,"articles, demonstratives, pronouns",4,4-way,1
+DIEDDD,41,Distance Contrasts in Demonstratives,nominal categories,"articles, demonstratives, pronouns",5,Five (or more)-way contrast,1
+DOBOPT,73,The Optative,verbal categories,"tense, possession, aspect, mood",1,Inflectional optative present,1
+DOBOPT,73,The Optative,verbal categories,"tense, possession, aspect, mood",2,Inflectional optative absent,0
+DRYIND,38,Indefinite Articles,nominal categories,"articles, demonstratives, pronouns",1,different,1
+DRYIND,38,Indefinite Articles,nominal categories,"articles, demonstratives, pronouns",2,numeral,1
+DRYIND,38,Indefinite Articles,nominal categories,"articles, demonstratives, pronouns",3,Indefinite affix on noun,1
+DRYIND,38,Indefinite Articles,nominal categories,"articles, demonstratives, pronouns",4,definite only,1
+DRYIND,38,Indefinite Articles,nominal categories,"articles, demonstratives, pronouns",5,neither,0
+DRYNEG,112,Negative Morphemes,simple clauses,"negation, plurality, interrogatives",1,affix,1
+DRYNEG,112,Negative Morphemes,simple clauses,"negation, plurality, interrogatives",2,particle,1
+DRYNEG,112,Negative Morphemes,simple clauses,"negation, plurality, interrogatives",3,auxilliary verb,1
+DRYNEG,112,Negative Morphemes,simple clauses,"negation, plurality, interrogatives",4,word,0
+DRYNEG,112,Negative Morphemes,simple clauses,"negation, plurality, interrogatives",5,Variation between negative word and affix,1
+DRYNEG,112,Negative Morphemes,simple clauses,"negation, plurality, interrogatives",6,Double negation,1
+DRYPOS,57,Position of Pronominal Possessive Affixes,nominal categories,"tense, possession, aspect, mood",1,prefix,1
+DRYPOS,57,Position of Pronominal Possessive Affixes,nominal categories,"tense, possession, aspect, mood",2,suffix,1
+DRYPOS,57,Position of Pronominal Possessive Affixes,nominal categories,"tense, possession, aspect, mood",3,"Both possessive prefixes and possessive suffixes, with neither primary",1
+DRYPOS,57,Position of Pronominal Possessive Affixes,nominal categories,"tense, possession, aspect, mood",4,none,0
+DRYPQP,92,Position of Polar Question Particles,word order,"negation, plurality, interrogatives",1,beginning,1
+DRYPQP,92,Position of Polar Question Particles,word order,"negation, plurality, interrogatives",2,end,1
+DRYPQP,92,Position of Polar Question Particles,word order,"negation, plurality, interrogatives",3,second,1
+DRYPQP,92,Position of Polar Question Particles,word order,"negation, plurality, interrogatives",4,other,1
+DRYPQP,92,Position of Polar Question Particles,word order,"negation, plurality, interrogatives",5,multiple,1
+DRYPQP,92,Position of Polar Question Particles,word order,"negation, plurality, interrogatives",6,none,0
+DRYPRE,26,Prefixing vs. Suffixing in Inflectional Morphology,morphology,morphological type,1,Little or no inflectional morphology,0
+DRYPRE,26,Prefixing vs. Suffixing in Inflectional Morphology,morphology,morphological type,2,Predominantly suffixing,1
+DRYPRE,26,Prefixing vs. Suffixing in Inflectional Morphology,morphology,morphological type,3,Moderate preference for suffixing,1
+DRYPRE,26,Prefixing vs. Suffixing in Inflectional Morphology,morphology,morphological type,4,Approximately equal amounts of suffixing and prefixing,1
+DRYPRE,26,Prefixing vs. Suffixing in Inflectional Morphology,morphology,morphological type,5,Moderate preference for prefixing,1
+DRYPRE,26,Prefixing vs. Suffixing in Inflectional Morphology,morphology,morphological type,6,Predominantly prefixing,1
+DRYPRO,101,Expression of Pronominal Subjects,simple clauses,"articles, demonstratives, pronouns",1,subject,0
+DRYPRO,101,Expression of Pronominal Subjects,simple clauses,"articles, demonstratives, pronouns",2,affix,1
+DRYPRO,101,Expression of Pronominal Subjects,simple clauses,"articles, demonstratives, pronouns",3,clitics,1
+DRYPRO,101,Expression of Pronominal Subjects,simple clauses,"articles, demonstratives, pronouns",4,other,1
+DRYPRO,101,Expression of Pronominal Subjects,simple clauses,"articles, demonstratives, pronouns",5,pronouns,0
+DRYPRO,101,Expression of Pronominal Subjects,simple clauses,"articles, demonstratives, pronouns",6,combo,1
+HAAEVD,77,Semantic Distinctions of Evidentiality,verbal categories,possibility and evidentials,1,No grammatical evidentials,0
+HAAEVD,77,Semantic Distinctions of Evidentiality,verbal categories,possibility and evidentials,2,Only indirect evidentials,1
+HAAEVD,77,Semantic Distinctions of Evidentiality,verbal categories,possibility and evidentials,3,Both direct and indirect evidentials,1
+HASNPL,34,Occurrence of Nominal Plurality,nominal categories,"negation, plurality, interrogatives",1,none,0
+HASNPL,34,Occurrence of Nominal Plurality,nominal categories,"negation, plurality, interrogatives",2,human nouns optional,1
+HASNPL,34,Occurrence of Nominal Plurality,nominal categories,"negation, plurality, interrogatives",3,"Plural only in human nouns, obligatory",1
+HASNPL,34,Occurrence of Nominal Plurality,nominal categories,"negation, plurality, interrogatives",4,"plural in all nouns, always optional",1
+HASNPL,34,Occurrence of Nominal Plurality,nominal categories,"negation, plurality, interrogatives",5,"plural all nouns, optional for inanimates",1
+HASNPL,34,Occurrence of Nominal Plurality,nominal categories,"negation, plurality, interrogatives",6,"plural all nouns, obligatory",1
+IGGNUM,49,Number of Cases,nominal categories,cases,1,none,0
+IGGNUM,49,Number of Cases,nominal categories,cases,2,2,0
+IGGNUM,49,Number of Cases,nominal categories,cases,3,3,0
+IGGNUM,49,Number of Cases,nominal categories,cases,4,4,1
+IGGNUM,49,Number of Cases,nominal categories,cases,5,5,1
+IGGNUM,49,Number of Cases,nominal categories,cases,6,6.5,1
+IGGNUM,49,Number of Cases,nominal categories,cases,7,8.5,1
+IGGNUM,49,Number of Cases,nominal categories,cases,8,10 or more,1
+IGGNUM,49,Number of Cases,nominal categories,cases,9,Exclusively borderline morphological case-marking,1
+MORASP,36,The Associative Plural,nominal categories,"negation, plurality, interrogatives",1,adddive also,1
+MORASP,36,The Associative Plural,nominal categories,"negation, plurality, interrogatives",2,bound special,1
+MORASP,36,The Associative Plural,nominal categories,"negation, plurality, interrogatives",3,non-bound special,1
+MORASP,36,The Associative Plural,nominal categories,"negation, plurality, interrogatives",4,none,0
+SIEALI,100,Alignment of Verbal Person Marking,simple clauses,verb morphology,1,none,0
+SIEALI,100,Alignment of Verbal Person Marking,simple clauses,verb morphology,2,accusative,1
+SIEALI,100,Alignment of Verbal Person Marking,simple clauses,verb morphology,3,ergative,1
+SIEALI,100,Alignment of Verbal Person Marking,simple clauses,verb morphology,4,Active alignment,1
+SIEALI,100,Alignment of Verbal Person Marking,simple clauses,verb morphology,5,Hierarchical alignment,1
+SIEALI,100,Alignment of Verbal Person Marking,simple clauses,verb morphology,6,Split alignment,1
+SIEVPA,102,Order of Person Markers on the Verb,simple clauses,agreement,1,not both,0
+SIEVPA,102,Order of Person Markers on the Verb,simple clauses,agreement,2,A precedes P,0
+SIEVPA,102,Order of Person Markers on the Verb,simple clauses,agreement,3,P precedes A,0
+SIEVPA,102,Order of Person Markers on the Verb,simple clauses,agreement,4,Person marking of the A or P argument,1
+SIEVPA,102,Order of Person Markers on the Verb,simple clauses,agreement,5,A and P are fused,1

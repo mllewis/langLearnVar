@@ -4,6 +4,7 @@ library(tidyr)
 library(ggplot2)
 library(shinythemes)
 library(lme4)
+library(citr)
 
 shinyUI(fluidPage(
   theme = shinytheme("spacelab"),
@@ -11,7 +12,7 @@ shinyUI(fluidPage(
   titlePanel("Linguistic Niche Browser"),
   p("Explore an aggregation of datasets that test relationships between features of the environment and elements of language.
     This browser is supplemental material to",
-    a("Lewis and Frank (under review, CogSci 2016).", 
+    a("Lewis and Frank (2016, CogSci Proceedings).", 
       href = "https://langcog.stanford.edu/papers_new/lewis-2016-underrev.pdf", target = "_blank")),
   br(),
   
@@ -53,10 +54,16 @@ shinyUI(fluidPage(
                verbatimTextOutput("summary")
               ),
       
-      tabPanel("Language Summary",
+      tabPanel("Data Summary",
+               br(), 
+               h4("Predictor data source:"),
+               htmlOutput("citation_x"),
+               h4("Outcome data source:"),
+               htmlOutput("citation_y"),
                br(), 
                h4("Number of languages:", textOutput("n_languages", inline = TRUE)),
                h4("Number of families:", textOutput("n_families", inline = TRUE)),
+               br(), 
                h4("Geographical distribution of languages:"),                  
                plotOutput("mapPlot")
           )

@@ -29,7 +29,7 @@ axis_vars <- c(
   "Number obstruents (log)" =  "n.obstruents_log",  
   "Number phonemes (log)" =  "n.phonemes_log",    
   "Number q. monophthongs (log)" = "n.qual.monophthongs_log",   
-  "Number sonorants (log)" =  "n.sonorants_log",              
+  "Number sonorants (log)" =  "n.sonorants_log",          
   "Number tones (log)" =  "n.tones_log",
   "Number vowels (log)" =  "n.vowels_log",                  
   "Phoneme diversity" =  "normalized.phoneme.diversity",  
@@ -41,5 +41,9 @@ axis_vars <- c(
   "Syllable rate" =  "syllable.rate",                 
   "Tone diversity" = "normalized.tone.diversity",     
   "Total population (log) " = "pop_log",   
-  "Vowel diversity" = "normalized.vowel.diversity"
+  "Vowel diversity" = "normalized.vowel.diversity",
+  "Morphological complexity (Lupyan & Dale, 2010)" = "adjusted.complexity",
+  "Lexical entropy (EPC)" = "H_scaled.EPC",
+  "Lexical entropy (PBC)" = "H_scaled.PBC",
+  "Lexical entropy (UDHR)" = "H_scaled.UDHR" 
   )

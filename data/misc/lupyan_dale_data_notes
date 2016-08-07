@@ -1,0 +1,22 @@
+ISSUES WITH PAPER
+
+##### 1 ######
+Morphological Complexity:
+
+paper reports 28 variables
+
+(1) My variable ("morphological.complexity") - WALS dataset (from Lupyan and Dale)
+- 27 variables (1 missing from dataset)
+- different coding of levels to complexity 
+- present for 1991 languages
+
+(2) L&D variable ("adjusted.complexity") - aggregated complexity dataset
+- 24 variables
+- Only 863 langauges of 1477 have ISOs (identified by language names, not ISO)
+- very not-normal
+- positively correlated with acquistion
+- changes loadings on PCA
+- population significant in individual model
+
+* weakly correlated (r = -.31)
+

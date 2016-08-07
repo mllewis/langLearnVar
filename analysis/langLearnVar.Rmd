@@ -73,26 +73,30 @@ CORR_THRESHOLD = .8
     + longitude (lon)
     + morpholigical complexity (morphological.complexity)
  * Bentz, et al. (2015): L2 learners and lexical diversity
-    + number of first language speakers (n.L1.speakers)
-    + number of second language speakers (n.L2.speakers)
-    + ratio of L2 to L1 (ratio.L2.L1)
+    + number of first language speakers (n.L1.speakers)  - sent in a separate email
+    + number of second language speakers (n.L2.speakers)  - sent in a separate email
+    + ratio of L2 to L1 (ratio.L2.L1) - sent in a separate email
     + parameters of Zipf-Mandelbrot’s law for lexical diversity (scaled.LDT.ZM)
     + Shannon entropy of lexical diversity (scaled.LDT.H)
     + Type-token ratio as measure of lexical diversity (scaled.LDT.TTR)
+ * Bentz, et al. (2016): Entropy measures
+    +  Entropy calculated from universal declaration of human rights (H_scaled.UDHR)
+    +  Entropy cacluclate from parallel bible corpus (H_scaled.PBC)
+    +  Entropy cacluclated from European Parliament Corpus (H_scaled.EPC)
  * Atkinson (2011): Phonemic diversity and best-fitting distance from origin
     + vowel diversity (normalized.vowel.diversity)
     + consonant diversity (normalized.consonant.diversity)
     + tone diversity (normalized.tone.diversity)
     + phoneme diversity (normalized.phoneme.diversity)
     + estimated distance for language origin (distance.from.origin)
- * Lewis & Frank (under review): Complexity bias
+ * Lewis & Frank (2016): Complexity bias
     + complexity bias, correlation between length and complexity (complexity.bias)
     + bias partially out spoken frequency (p.complexity.bias)
     + bias for only monosyllabic words (mono.complexity.bias)
     + bias for only open class words (open.complexity.bias)
  * Futrell, Mahowald, & Gibson (2015): Dependency length
     + mean observed dependency length in characters (mean.dependency.length)
- * Pellegrino, Coupe, & Marsico (2015): Information density
+ * Pellegrino, Coupe, & Marsico (2011): Information density
      + information.density
      + syllable.rate
      + information.rate
@@ -109,6 +113,13 @@ CORR_THRESHOLD = .8
     + mean length in number of characters (mean.length)
  * Luniewska, et al. (2015): Age of acquisition (aoa)
     + mean adult-judged age of acquistion (mean.aoa)
+    
+TO DO:
+* Add in new complexity norms
+* add in futrell dependency lengths (need languaeg key)
+* add in other futrell data
+* re-run all analyses (particularly PCA) 
+* look at new data source Gary pointed to
 
 ## Read in datasets
 Language codes (from WALS) -- WALS, ISO, ascii-name. These are used to merge across datasets. 
@@ -120,7 +131,7 @@ codes = read.csv("../data/language_codes.csv") %>%
 # in cases where there are two ISO codes, takes first
 ```
 
-Lupyan & Dale (2010): Demographic variables and syntactic compelxity
+Lupyan & Dale (2010): Demographic variables and syntactic complexity
 ```{r}
 wichmann_ISOS = read.csv("../data/ISO_mappings_from_wichmann.csv", 
                          stringsAsFactors=F)[-1] %>%
@@ -189,7 +200,7 @@ for (i in 1:length(qualVarNames)){
   if (is.na(old)) {print("NA!!!")}
   new = thisVarLabs$ld.complexity
   col_i = grep(qualVarNames[i], colnames(qual))
-  qual[,col_i] = mapvalues(as.matrix(qual[,col_i]), 
+  qual[,col_i] = plyr::mapvalues(as.matrix(qual[,col_i]), 
                            from = as.character(old),
                            to = as.character(new), warn_missing = TRUE)
 }
@@ -215,34 +226,46 @@ ld.c = read.table("../data/lupyan_2010_complexity.txt", fill = T,
 ld.c$adjusted.complexity = ld.c$morphological.complexity.ld / ld.c$propPresent
 ```
 
-Bentz, et al. (2015): L2 learners and lexical diversity.Note here that we are only looking at languages from the UDHR corpus. The other corpora have smaller languages only.
-```{r, eval = F}
-bentz = read.csv("../data/bentz_2015.csv") %>%
+Bentz, et al. (2015): Lexical diversity. Note here that we are only looking at languages from the UDHR corpus. The other corpora have smaller languages only.
+```{r}
+bentz_2015 = read.csv("../data/bentz_2015.csv") %>%
   gather(temp, LDT, starts_with("LDT")) %>% 
   unite(temp1, measure, temp, sep = ".") %>% 
   spread(temp1, LDT) %>%
   filter(text == "UDHR") %>%
-  select(iso_639_3, RatioL2, a.LDTscaled, 
-         H.LDTscaled, TTR.LDTscaled, Stock,
-         Region, L1_speakers, L2_speakers, TTR.LDT) %>%
+  select(iso_639_3, a.LDTscaled, 
+         H.LDTscaled, TTR.LDTscaled, TTR.LDT) %>%
   rename(ISO = iso_639_3,
-         n.L1.speakers = L1_speakers,
-         n.L2.speakers = L2_speakers,
-         ratio.L2.L1 = RatioL2,
-         stock = Stock,
-         region = Region,
          scaled.LDT.TTR = TTR.LDTscaled,
          scaled.LDT.ZM = a.LDTscaled,
          scaled.LDT.H = H.LDTscaled) 
+```
 
-# n_speakers taken directly from ethnologue website by ML for missing languages that were high-frequency across the datasets
-ethno_sup = read.csv("../data/supplementary_enthnologue.csv")
-bentz = full_join(bentz, ethno_sup) %>%
-        mutate(ISO = as.factor(ISO))
+Bentz, et al. (2015): L2 speakers
+```{r}
+bentz_2015_l2= read.csv("../data/bentz_2015_L2.csv") %>%
+  select(iso, l1, l2, ratio) %>%
+  rename(ISO = iso,
+         n.L1.speakers = l1,
+         n.L2.speakers = l2,
+         ratio.L2.L1 = ratio) 
+```
+
+Bentz, et al. (2016): Entropy measures. Some languages have multiple values for a corpus. Why is this? Just taking first value for now...
+```{r}
+bentz_2016= read.csv("../data/bentz_2016.csv") %>%
+  select(iso, Corpus, H_scaled) %>%
+  group_by(iso, Corpus) %>%
+  slice(1) %>%
+  spread(Corpus, H_scaled) %>%
+  rename(H_scaled.EPC =  EPC,
+         H_scaled.PBC = PBC,
+         H_scaled.UDHR = UDHR, 
+         ISO = iso)
 ```
 
 Atkinson (2011)
-```{r, eval = F}
+```{r }
 atkinson = read.csv("../data/atkinson_2011.csv") %>%
   select(normalized.vowel.diversity,
          normalized.consonant.diversity,	
@@ -254,18 +277,18 @@ atkinson = read.csv("../data/atkinson_2011.csv") %>%
   distinct(ISO) 
 ```
 
-Lewis & Frank (under review): Complexity Bias
-```{r, eval = F}
+Lewis & Frank (2016): Complexity Bias
+```{r}
 # complexity bias
 cb = read.csv("../data/lewis_2015.csv") %>%
   rename(complexity.bias = corr,
          p.complexity.bias = p.corr,
          mono.complexity.bias = mono.cor,
          open.complexity.bias = open.cor) %>%
-  left_join(codes, by="language") %>%
+  left_join(codes, by = "language") %>%
   select(-X.1, -X, -lower.ci, -upper.ci, -checked,
          -mean.length) %>%
-  distinct(ISO) %>%
+  distinct(ISO, .keep_all = TRUE) %>%
   filter(language != "english") %>% # english is an outlier in this dataset because norms were colelcted in english
   select(-language, -WALS)
 ```
@@ -281,14 +304,14 @@ dl = read.csv("../data/futrell_2015.csv") %>%
 ```
 
 Pellegrino, Coupe, & Marsico (2015): Information density
-```{r, eval = F}
+```{r}
 uid = read.csv("../data/pellegrino_2015.csv")  %>%
   left_join(codes, by="language") %>%
   select(-language, -WALS)
 ```
 
 Moran, McCloy, & Wright (2012): Phonemic inventory
-```{r, eval = F}
+```{r}
 phoneme = read.csv("../data/moran_2012.csv") %>%
   select(ISO, pho, con, vow, son, 
          obs, mon, qua, ton) %>%
@@ -303,7 +326,7 @@ phoneme = read.csv("../data/moran_2012.csv") %>%
 ```
 
 Wichmann, et al. (2013): Mean word length
-```{r, eval = F}
+```{r}
 # note is this IPA? - fix this!
 # [308 low frequency language have no ISO, leaving 4421 (TOTAL:4729)]
 ml.raw = read.csv("../data/wichmann_2013.csv") %>% 
@@ -334,8 +357,8 @@ ml = ml.raw %>%
 #  mutate(names = tolower(names))
 ```
 
-Luniewska, et al. (2015): Age of acquistion (Aoa)
-```{r, eval = T}
+Luniewska, et al. (2015): Age of acquistion (AoA)
+```{r}
 aoa.raw = read.csv("../data/luniewska_2015.csv", 
                    header = T, fileEncoding = "latin1")
 
@@ -354,24 +377,25 @@ aoa = aoa.raw %>%
 ```
 
 Merge data frames together by ISO
-```{r merge data, eval = F}
+```{r merge data}
 d = full_join(ld.demo.qual, cb, by = "ISO") %>%
   full_join(ld.c, by = "ISO") %>%
-  full_join(bentz, by = "ISO") %>%
+  full_join(bentz_2015, by = "ISO") %>%
+  full_join(bentz_2015_l2, by = "ISO") %>%
+  full_join(bentz_2016, by = "ISO") %>%
   full_join(phoneme, by = "ISO") %>%
   full_join(ml, by = "ISO") %>%
-  full_join(dl, by = "ISO") %>%
+  #full_join(dl, by = "ISO") %>%
   full_join(uid, by = "ISO") %>%
   full_join(aoa, by = "ISO") %>%
   full_join(atkinson, by = "ISO") %>%
   mutate(ISO = as.factor(ISO)) %>%
   filter(!is.na(native.country)) # this is important to have for the mixed effects models
-
 ```
 
 load data
 ```{r}
-# write.csv(d, "../data/langLearnVar_data.csv")
+ write.csv(d, "../data/langLearnVar_data.csv")
 d = read.csv("../data/langLearnVar_data.csv")[,-1]
 ```
 
@@ -382,11 +406,11 @@ d.clean = d %>%
   mutate_each(funs(removeOutlier(.,N_EXCLUDE_SDS)), c(-ISO,
                                                       -lang.family, 
               -native.country, -native.country.area, 
-         -lang.genus, -language, -stock, -region))
+         -lang.genus, -language))
 
 d.clean %>%
   select(-ISO, -lang.family, -native.country, -native.country.area, 
-         -lang.genus, -language, -stock, -region) %>%
+         -lang.genus, -language) %>%
   gather(var, value) %>%
   ggplot(aes(sample = value)) + 
   stat_qq(na.rm = T, size = .2) + 
@@ -521,7 +545,7 @@ demo_vars_crit = c("n.neighbors_log",
 lang_vars_crit = c("p.complexity.bias","TTR.LDT",
                    "mean.dependency.length", "mean.length",
                    "n.consonants_log", "n.vowels_log",
-                   "adjusted.complexity", "adjusted.complexity")
+                   "adjusted.complexity")
 
 d.scatter.fam = d.clean %>% 
   select(pop_log, ratio.L2.L1_log,
@@ -625,6 +649,7 @@ ggplot(d.scatter.fam, aes(x = pop_value, y = lang_value)) +
 ```
 
 ### Replicate Lupyan and Dale (2010) complexity score plot (Fig. 3)
+
 ```{r Lupyan and Dale complexity plot}
 ld.demo.qual %>%
   mutate(morphological.complexity.factor =

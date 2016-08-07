@@ -1,20 +1,13 @@
 library(ggvis)
 library(dplyr)
-library(shinyapps)
+#library(shinyapps)
 library(broom)
 library(R.utils)
 
+
 # Set up handles to database tables on app start
 d <- read.csv("data/langLearnVar_data_clean.csv")
-
-# filter variables
-#"Language" = "stock"                         
-#"Language" = "region"                         
-#"Language Family" = "lang.family",                
-#"Language Genus" = "lang.genus"                    
-#"Language Genus" = "native.country"          
-#"Language Genus" = "native.country.area"     
-#"Language Genus" = "language"
+citations <- read.csv("data/bibliography.csv")
 
 mapTheme = theme(plot.background = element_blank(),
                  panel.grid.major = element_blank(),
@@ -125,14 +118,43 @@ shinyServer(function(input, output, session) {
 
   # number of languages
   output$n_languages<- renderText({ 
-        nrow(d.sub())
-    })
+    nrow(d.sub())
+  })
   
   # number of families
   output$n_families<- renderText({ 
     m = droplevels(d.sub()$lang.family)
     length(summary(m))
+  }) 
+  
+  # citation_x
+  output$citation_x<- renderUI({ 
+    m = filter(citations, var_name == input$xvar) %>%
+      select(long_source) 
+    HTML(as.character(m[1,1]))
   })
+  
+  # citation_y
+  output$citation_y<- renderUI({ 
+   m = filter(citations, var_name == input$yvar) %>%
+     select(long_source) 
+   HTML(as.character(m[1,1]))
+  })
+  
+  # link
+  output$citation_y<- renderUI({ 
+    m = filter(citations, var_name == input$yvar) %>%
+      select(long_source) 
+    HTML(as.character(m[1,1]))
+  })
+  
+  # notes
+  output$citation_y<- renderUI({ 
+    m = filter(citations, var_name == input$yvar) %>%
+      select(long_source) 
+    HTML(as.character(m[1,1]))
+  })
+  
   
   # map plot
   output$mapPlot <- renderPlot({

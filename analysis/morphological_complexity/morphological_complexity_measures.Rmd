@@ -1,0 +1,167 @@
+---
+title: "Measures of morphological complexity"
+author: "Molly Lewis"
+output: 
+  html_document:
+    toc: true
+    number_sections: true
+    theme: cerulean
+---
+
+  
+```{r, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, cache = TRUE)
+library(knitr)
+library(ggplot2)
+library(broom)
+library(dplyr)
+library(tidyr)
+library(lme4)
+library(metafor)
+library(langcog)
+
+most.frequent.level = function (x){
+    mf = names(which.max(table(x)))
+    return(mf)
+}
+```
+
+Language codes (from WALS) -- WALS, ISO, ascii-name. These are used to merge across datasets. 
+```{r read in datasets}
+codes = read.csv("data/language_codes.csv") %>%
+  select(language, WALS, ISO) %>%
+  mutate(ISO = unlist(lapply(strsplit(as.character(ISO),
+                                      ","),function(x) x[1])))
+# in cases where there are two ISO codes, takes first
+```
+
+Read in raw WALS data
+```{r}
+ld = read.table("data/lupyan_2010.txt", fill = T, 
+                header = T, sep = "\t", na.strings = "*") %>%
+  left_join(codes, c("walsCode" = "WALS")) %>%
+  mutate(lang = tolower(lang)) %>%
+  #left_join(wichmann_ISOS, by = "lang") %>% # use wichmann ISOS for some missing
+  filter(!is.na(ISO)) %>%
+  filter(ISO != "")
+
+# rename columns
+ld = rename(ld, pop_log = logpop2) 
+
+# get means across language
+ld.demo = ld %>%
+  group_by(ISO) %>%
+  summarise_each(funs(mean(., na.rm = TRUE)), 
+                 c(8:9, 16:121))  %>%
+  select(1:3, 93:95, 100:101, 103:105, 108)
+
+ld.demo = ungroup(ld.demo) %>%
+  select(pop_log, ISO)
+```
+
+
+Morphological complexity, hand derived
+```{r}
+# get variables to include 
+qual = ld %>%
+  select(18:103, 124) %>%
+  mutate_each(funs(as.factor)) %>%
+  group_by(ISO) %>%
+  summarise_each(funs(most.frequent.level)) %>%
+  mutate_each(funs(as.factor)) 
+
+ld_feature_names = read.csv("data/lupyan_2010_all_feature_mappings.csv") 
+qualVarNames = intersect(names(qual), ld_feature_names$WALS.feature.name)
+qual = select(qual,which(is.element(names(qual), c("ISO", qualVarNames))))
+
+# remap factor levels to complexity values (0,1)
+# note two variables that are reported in the paper (NICPOC[59] and CYSIND[39] are missing in the data)
+
+for (i in 1:length(qualVarNames)){
+  thisVarLabs = ld_feature_names[ld_feature_names$WALS.feature.name == qualVarNames[i],]
+  old = thisVarLabs$ld.level.label
+  if (is.na(old)) {print("NA!!!")}
+  new = thisVarLabs$ld.complexity
+  col_i = grep(qualVarNames[i], colnames(qual))
+  qual[,col_i] = plyr::mapvalues(as.matrix(qual[,col_i]), 
+                           from = as.character(old),
+                           to = as.character(new), warn_missing = TRUE)
+}
+
+ld.complexity = qual %>%
+  mutate_each(funs(as.numeric), -ISO) %>%
+  gather(variable, complexity.level, 2:28) %>%
+  group_by(ISO) %>%
+  summarise(morphological.complexity.by.hand = sum(complexity.level))
+
+ld.demo.qual = left_join(ld.demo, ld.complexity)
+```
+
+
+Morphological complexity from Lupyan and Dale (2010)
+```{r}
+ld.c = read.table("data/lupyan_2010_complexity.txt", fill = T, 
+                  header = T, sep = "\t", na.strings = "*") %>%
+  mutate(lang = tolower(lang)) %>%
+  left_join(codes, c("lang" = "language")) %>%
+  rename(morphological.complexity.ld = complexity,
+         morphological.complexity.ld.centered = complexityCentered) %>%
+  select(morphological.complexity.ld, propPresent, ISO)
+
+ld.c$adjusted.complexity.ld = ld.c$morphological.complexity.ld / ld.c$propPresent
+ld.demo.qual = left_join(ld.demo.qual, select(ld.c, adjusted.complexity.ld, ISO ))
+```
+
+Plot
+```{r}
+ld.demo.qual %>%
+  ggplot(aes(x = morphological.complexity.by.hand, y = adjusted.complexity.ld)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_bw()
+
+cor.test(ld.demo.qual$morphological.complexity.by.hand,
+         ld.demo.qual$adjusted.complexity.ld)
+```
+
+```{r Lupyan and Dale complexity plot - by hand}
+ld.demo.qual %>%
+  mutate(morphological.complexity.factor =
+           as.factor(morphological.complexity.by.hand)) %>%
+  group_by(morphological.complexity.factor) %>%
+  multi_boot(column="pop_log",
+              summary_groups = c("morphological.complexity.factor"),
+              statistics_functions = c("mean", "ci_lower","ci_upper")) %>%
+  mutate(morphological.complexity =  
+           as.numeric(as.character(morphological.complexity.factor))) %>%
+  ggplot() +
+  geom_pointrange(aes(x= morphological.complexity.factor,
+                      y = mean, ymin = ci_lower, ymax = ci_upper)) + 
+  geom_smooth(method = "lm",aes(morphological.complexity-5, mean)) +
+  # theres a weird offset because complexity is a factor?
+  ylab("Log population") + 
+  xlab("Morphological complexity - by hand") +
+  ggtitle("Lupyan and Dale (2010) Fig. 3 reproduction - by hand") +
+  theme_bw() 
+```
+
+```{r Lupyan and Dale complexity plot - original}
+ld.demo.qual %>%
+  mutate(adjusted.complexity.ld = floor(adjusted.complexity.ld)) %>%
+  filter(adjusted.complexity.ld = !is.na(adjusted.complexity.ld)) %>%
+  group_by(adjusted.complexity.ld) %>%
+  multi_boot(column="pop_log",
+              summary_groups = c("adjusted.complexity.ld"),
+              statistics_functions = c("mean", "ci_lower","ci_upper")) %>%
+  mutate(adjusted.complexity.ld =  
+           as.numeric(as.character(adjusted.complexity.ld))) %>%
+  ggplot() +
+  geom_pointrange(aes(x= adjusted.complexity.ld,
+                      y = mean, ymin = ci_lower, ymax = ci_upper)) + 
+  geom_smooth(method = "lm",aes(adjusted.complexity.ld, mean)) +
+  # theres a weird offset because complexity is a factor?
+  ylab("Log population") + 
+  xlab("Morphological complexity - original data") +
+  ggtitle("Lupyan and Dale (2010) Fig. 3 reproduction - original data") +
+  theme_bw() 
+```
